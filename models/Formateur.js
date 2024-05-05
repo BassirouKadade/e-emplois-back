@@ -18,16 +18,11 @@ function initialModelFormateur(sequelize) {
         nom: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate: {
-                len: [2, 50] // Ensure nom length is between 2 and 50 characters
-            }
+           
         },
         prenom: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate: {
-                len: [2, 50] // Ensure prenom length is between 2 and 50 characters
-            }
         },
         email: {
             type: DataTypes.STRING,
@@ -43,7 +38,7 @@ function initialModelFormateur(sequelize) {
         },
         id_etablissement: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: { // Corrected 'refrences' to 'references'
                 model: "etablissements",
                 key: "id",
