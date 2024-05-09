@@ -91,9 +91,10 @@ update: async (request, response) => {
 
     // Vérifier si un formateur avec le même email existe déjà
     const formateurExist = await Formateur.findOne({ where: { email } });
-    if (formateurExist && formateurExist.matricule !== matricule) {
+    if (formateurExist && formateurExist.matricule!== matricule) {
       errorServer.existeEMail = "Un formateur avec cet email existe déjà";
-      return response.status(400).json({m:"poiuy"});
+      console.log('poiu')
+      return response.status(400).json(errorServer);
     }
 
     // Mettre à jour les informations du formateur
@@ -103,15 +104,90 @@ update: async (request, response) => {
     }
 
     await formateur.update({ nom, prenom, metier, email });
-
-    response.status(200).json({ success: "Formateur mis à jour avec succès" });
+    errorServer.success="Formateur mis à jour avec succès"
+    response.status(200).json(errorServer);
   } catch (error) {
     console.error(error);
     response.status(500).send('Erreur lors de la mise à jour du formateur');
   }
 }
+,
+search: async (request, response) => {
+  try {
+    const { search, page } = request.query;
+    console.log("search", search)
+    if (!search) {
+      return response.status(400).json({ message: 'Search term is required' });
+    }
 
+    const searchOptions = {
+      [Op.or]: [
+        { nom: { [Op.like]: `%${search}%` } },
+        { prenom: { [Op.like]: `%${search}%` } },
+        { matricule: { [Op.like]: `%${search}%` } },
+        // { email: { [Op.like]: `%${search}%` } },
+        { metier: { [Op.like]: `%${search}%` } },
+      ],
+    };
 
+    const limit = 6; // Nombre d'éléments par page
+    const pageNumber = page ? parseInt(page) : 1; // Numéro de la page demandée par l'utilisateur
+    const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
+
+    const { count, rows } = await Formateur.findAndCountAll({
+      limit,
+      offset,
+      where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
+    });
+   
+    const totalPages = Math.ceil(count / limit); // Nombre total de pages
+    response.status(200).json({
+      totalPages,
+      formateurs: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ message: 'Error during search' });
+  }
+},
+searchNext: async (request, response) => {
+  try {
+    const { search,page } = request.query;
+    console.log("search 222", search)
+    if (!search) {
+      return response.status(400).json({ message: 'Search term is required' });
+    }
+
+    const searchOptions = {
+      [Op.or]: [
+        { nom: { [Op.like]: `%${search}%` } },
+        { prenom: { [Op.like]: `%${search}%` } },
+        { matricule: { [Op.like]: `%${search}%` } },
+        // { email: { [Op.like]: `%${search}%` } },
+        { metier: { [Op.like]: `%${search}%` } },
+      ],
+    };
+
+    const limit = 6; // Nombre d'éléments par page
+    const pageNumber = page ? parseInt(page) : 1; // Numéro de la page demandée par l'utilisateur
+    const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
+
+    const { count, rows } = await Formateur.findAndCountAll({
+      limit,
+      offset,
+      where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
+    });
+   
+    const totalPages = Math.ceil(count / limit); // Nombre total de pages
+    response.status(200).json({
+      totalPages,
+      formateurs: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ message: 'Error during search' });
+  }
+},
 
 };
 
