@@ -10,7 +10,7 @@ function initialModelModule(sequelize) {
             autoIncrement: true,
             allowNull: false
         },
-        code: {
+        codeModule: {
             type: DataTypes.STRING,
             allowNull: false
         },
@@ -18,7 +18,7 @@ function initialModelModule(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        MH: {
+        masseHoraire: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -26,13 +26,13 @@ function initialModelModule(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        MHA: {
+        MHD: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
         id_etablissement: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: { // Corrected 'refrences' to 'references'
                 model: "etablissements",
                 key: "id",

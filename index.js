@@ -5,6 +5,7 @@ const {  sequelize } = require('./config/sequelize');
 const formateurRoute=require('./routes/formateurRoute')
 const cors=require('cors')
 const authRoute=require('./routes/authRoute')
+const moduleRoute=require('./routes/moduleRoute')
 const app = express();
 
 const port = process.env.PORT || 3001;
@@ -20,6 +21,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/formateur',formateurRoute)
+app.use('/module',moduleRoute)
 app.use('/',authRoute)
 
 // Middleware de gestion d'erreurs
