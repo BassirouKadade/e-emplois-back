@@ -16,7 +16,7 @@ function initialModelGroupe(sequelize) {
         },
         description: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         id_filiere: {
             type: DataTypes.INTEGER,
@@ -29,7 +29,7 @@ function initialModelGroupe(sequelize) {
         },
         id_etablissement: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: { // Corrected 'refrences' to 'references'
                 model: "etablissements",
                 key: "id",

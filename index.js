@@ -6,6 +6,9 @@ const formateurRoute=require('./routes/formateurRoute')
 const cors=require('cors')
 const authRoute=require('./routes/authRoute')
 const moduleRoute=require('./routes/moduleRoute')
+const salleRoute=require('./routes/salleRoute')
+const filiereRoute=require('./routes/filiereRoute')
+const groupeRoute=require('./routes/groupeRoute')
 const app = express();
 
 const port = process.env.PORT || 3001;
@@ -22,6 +25,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/formateur',formateurRoute)
 app.use('/module',moduleRoute)
+app.use('/salle',salleRoute)
+app.use('/filiere',filiereRoute)
+app.use('/groupe',groupeRoute)
+
 app.use('/',authRoute)
 
 // Middleware de gestion d'erreurs

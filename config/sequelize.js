@@ -38,6 +38,8 @@ Module.associate({ Filiere, Formateur }); // Association entre Module et Filiere
 Formateur.associate({ Module }); // Association entre Formateur et Module
 User.associate({ Role }); // Association entre User et Role
 Role.associate({ User }); // Association entre Role et User
+Filiere.hasMany(Groupe, { foreignKey: 'id_filiere', as: 'groupes' });
+Groupe.belongsTo(Filiere, { foreignKey: 'id_filiere', as: 'filiere' });
 
 module.exports = {
   sequelize,

@@ -16,7 +16,7 @@ function initialModelSalle(sequelize) {
         },
         emplacement: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         capacite: {
             type: DataTypes.INTEGER,
@@ -25,7 +25,7 @@ function initialModelSalle(sequelize) {
         },
         id_etablissement: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: { // Corrected 'refrences' to 'references'
                 model: "etablissements",
                 key: "id",
