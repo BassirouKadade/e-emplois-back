@@ -1,6 +1,5 @@
-const { format } = require('mysql2');
-const { Module, Formateur } = require('../../config/sequelize');
-const { Op } = require('sequelize');
+const { Module, Groupe,Formateur, Filiere } = require('../../config/sequelize');
+const { Op, where } = require('sequelize');
 
 const moduleController = {
   ajouter: async (request, response) => {
@@ -288,6 +287,56 @@ getInfosFormateur:async (request, response) => {
     response.status(500).send('Erreur lors de la suppression des modules');
   }
 },
+getModuleFiliereGroupe: async (request, response) => {
+  try {
+    // Extract idGroupe from the query parameters
+    const { idGroupe } = request.query;
+    
+    // Initialize errorServer object for storing error messages
+    const errorServer = {};
+
+    // Check if idGroupe is provided in the query parameters
+    if (!idGroupe) {
+      errorServer.error = 'Tous les champs sont obligatoires';
+      return response.status(400).json(errorServer);
+    }
+
+    // Fetch the group details along with its associated filiere
+    const groupe = await Groupe.findOne({
+      where: { id: idGroupe },
+      include: {
+        model: Filiere,
+        as: 'filiere'
+      }
+    });
+
+    // Check if the group exists
+    if (!groupe) {
+      errorServer.error = "Le groupe n'existe pas";
+      return response.status(404).json(errorServer);
+    }
+
+    // Get the associated filiere of the group
+    const filiere = groupe.filiere;
+
+    // Check if the filiere exists for the group
+    if (!filiere) {
+      errorServer.error = "Aucune filière trouvée pour ce groupe";
+      return response.status(404).json(errorServer);
+    }
+
+    // Fetch modules associated with the filiere
+    const modules = await filiere.getModules();
+
+    // Send the modules as a JSON response
+    response.status(200).json(modules);
+  } catch (error) {
+    // Log the error and send a 500 status code with error message
+    console.error(error);
+    response.status(500).json({ error: "Erreur lors de la récupération du module" });
+  }
+}
+
 };
 
 module.exports = moduleController;

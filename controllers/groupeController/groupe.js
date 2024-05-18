@@ -149,6 +149,16 @@ const groupeController = {
       response.status(500).json({ message: 'Error during search' });
     }
   },
+  getGroupeTotale:async (request, response) => {
+    try {
+      const groupes=await Groupe.findAll()
+      response.status(200).json(groupes);
+    } catch (error) {
+      console.error(error);
+      response.status(500).send('Erreur lors de la suppression des groupes');
+    }
+  },
+  
 };
 
 module.exports = groupeController;
