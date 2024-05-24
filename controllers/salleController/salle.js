@@ -4,12 +4,12 @@ const { Op } = require('sequelize');
 const salleController = {
   ajouter: async (request, response) => {
     try {
-      let { nom, capacite, emplacement } = request.body;
+      let { MREST,MH,nom, capacite, emplacement } = request.body;
       nom = nom.trim();
       emplacement = emplacement.trim();
       const errorServer = {};
 
-      if (!nom || !capacite) {
+      if (!nom || !MREST || !MH ||!capacite) {
         errorServer.error = 'Le nom et la capacité sont obligatoires';
         return response.status(400).json(errorServer);
       }
@@ -21,7 +21,7 @@ const salleController = {
         return response.status(400).json(errorServer);
       }
 
-      const salle = { nom, capacite, emplacement };
+      const salle = { nom, MREST,MH,capacite, emplacement };
       await Salle.create(salle);
       response.status(201).json({ success: "Salle ajoutée avec succès" });
     } catch (error) {
@@ -73,11 +73,11 @@ const salleController = {
   
   update: async (request, response) => {
     try {
-      const { id, nom, capacite, emplacement } = request.body;
+      const { id,MREST,MH, nom, capacite, emplacement } = request.body;
       
       const errorServer = {};
 
-      if (!nom || !capacite) {
+      if (!nom || !MREST || !MH ||!capacite) {
         errorServer.error = 'Le nom et la capacité sont obligatoires';
         return response.status(400).json(errorServer);
       }
@@ -93,7 +93,7 @@ const salleController = {
         return response.status(400).json(errorServer);
       }
 
-      await salle.update({ nom, capacite, emplacement });
+      await salle.update({MREST,MH, nom, capacite, emplacement });
       errorServer.success = "Salle mise à jour avec succès";
       response.status(200).json(errorServer);
     } catch (error) {
@@ -142,6 +142,16 @@ const salleController = {
     } catch (error) {
       console.error(error);
       response.status(500).json({ message: 'Error during search' });
+    }
+  },
+  getAllSalleDatabase:async (request, response) => {
+    try {
+     
+     const salles= await Salle.findAll()
+      response.status(200).json(salles);
+    } catch (error) {
+      console.error(error);
+      response.status(500).send('Erreur lors de la suppression des modules');
     }
   },
 };

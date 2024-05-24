@@ -28,7 +28,7 @@ function initialModelModule(sequelize) {
         },
         MHD: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         id_etablissement: {
             type: DataTypes.INTEGER,

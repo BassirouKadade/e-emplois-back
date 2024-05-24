@@ -9,6 +9,7 @@ const moduleRoute=require('./routes/moduleRoute')
 const salleRoute=require('./routes/salleRoute')
 const filiereRoute=require('./routes/filiereRoute')
 const groupeRoute=require('./routes/groupeRoute')
+const emploisRoute=require('./routes/emploisRoute')
 const app = express();
 
 const port = process.env.PORT || 3001;
@@ -28,7 +29,7 @@ app.use('/module',moduleRoute)
 app.use('/salle',salleRoute)
 app.use('/filiere',filiereRoute)
 app.use('/groupe',groupeRoute)
-
+app.use('/emplois',emploisRoute)
 app.use('/',authRoute)
 
 // Middleware de gestion d'erreurs

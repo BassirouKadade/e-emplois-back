@@ -18,10 +18,19 @@ function initialModelSalle(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
+
         capacite: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 25
+        },
+        MH: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        MREST: {
+            type: DataTypes.FLOAT,
+            allowNull: false
         },
         id_etablissement: {
             type: DataTypes.INTEGER,

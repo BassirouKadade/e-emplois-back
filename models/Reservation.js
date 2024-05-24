@@ -10,53 +10,45 @@ function initialModelReservation(sequelize) {
             autoIncrement: true,
             allowNull: false
         },
-        code: {
+        startIndex: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        width:{
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        startEnd: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        typeReservation: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        description: {
+        salle: {
             type: DataTypes.STRING,
-            allowNull: false
-        },
-        id_salle: {
-            type: DataTypes.INTEGER,
             allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
-                model: "salles",
-                key: "id",
-                onDelete: "CASCADE"
-            }
         },
-        id_formateur: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
-                model: "formateurs",
-                key: "id",
-                onDelete: "CASCADE"
-            }
+        formateur: {
+            type: DataTypes.STRING,
+            allowNull: true,
         }
-        , id_modules: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
-                model: "modules",
-                key: "id",
-                onDelete: "CASCADE"
-            }
+        , module: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
-        id_groupe: {
-            type: DataTypes.INTEGER,
+        groupe: {
+            type: DataTypes.STRING,
             allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
-                model: "groupes",
-                key: "id",
-                onDelete: "CASCADE"
-            }
+        },
+        day:{
+            type: DataTypes.STRING,
+            allowNull: false,
         },
         id_etablissement: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: { // Corrected 'refrences' to 'references'
                 model: "etablissements",
                 key: "id",
