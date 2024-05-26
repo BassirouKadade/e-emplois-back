@@ -22,6 +22,14 @@ function initialModelReservation(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true
         },
+        startTop: {
+            type: DataTypes.FLOAT,
+            allowNull: true
+        },
+        nombeHeureSeance: {
+            type: DataTypes.FLOAT,
+            allowNull: true
+        },
         typeReservation: {
             type: DataTypes.STRING,
             allowNull: false

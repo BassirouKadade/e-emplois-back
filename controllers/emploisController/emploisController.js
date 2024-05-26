@@ -9,18 +9,28 @@ const emploisController = {
       if (start<0 || !day || end<0) {
         return response.status(400).json({ error: 'Start, end dates, and day are required' });
       }
-  
       const reservations = await Reservation.findAll({
         where: {
-          [Op.and]: [
-            { startIndex: { [Op.gte]: start } },
-            { startEnd: { [Op.lte]: end } },
-            { day: { [Op.eq]: day } }
+          day: { [Op.eq]: day },
+          [Op.or]: [
+            {
+              startIndex: { [Op.lte]: start },
+              startEnd: { [Op.gt]: start }
+            },
+            {
+              startIndex: { [Op.lt]: end },
+              startEnd: { [Op.gte]: end }
+            },
+            {
+              startIndex: { [Op.gte]: start },
+              startEnd: { [Op.lte]: end }
+            }
           ]
         }
       });
-  
+      
       const reservedSalleIds = reservations.map(reservation => reservation.salle);
+      console.log(reservedSalleIds)
       const salles = await Salle.findAll({
           where: {
               [Op.and]: [
@@ -45,9 +55,11 @@ const emploisController = {
         idGroupe,
         typeSeance,
         day,
+        top,
         width
       } = request.body;
   
+      // console.log('Top',top)
       if (startIndex<0 || !width || startEnd<0 || !idSalle || !idGroupe || !typeSeance) {
         return response.status(400).json({ error: 'Missing required parameters' });
       }
@@ -68,7 +80,9 @@ const emploisController = {
         groupe: groupe?.code, // Utiliser idGroupe ici
         salle: salle?.nom,
         day:day,
-        width:width
+        width:width,
+        startTop:top,
+        nombeHeureSeance:resultNombre
       });
       // Retourner la réservation créée
       response.status(200).json({message:"La reservation est creer avec success"});
@@ -100,20 +114,38 @@ const emploisController = {
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
   },  
+  getTotaleMasseHoraire: async (request, response) => {
+    try {
+      const { idGroupe } = request.query;
+      if (!idGroupe) {
+        return response.status(400).json({ error: 'idGroupe is required' });
+      }
+  
+      const groupe = await Groupe.findByPk(idGroupe);
+      if (!groupe) {
+        return response.status(404).json({ error: 'Groupe not found' });
+      }
+  
+      const reservations = await Reservation.findAll({
+        where: {
+          groupe: { [Op.eq]: groupe.code } // Assuming 'groupe' refers to 'code' field in the Reservation model
+        },
+        attributes: ['nombeHeureSeance'] // Only select the 'nombeHeureSeance' field
+      });
+  
+      // Sum the 'nombeHeureSeance' field from all reservations
+      const totalHeures = reservations.reduce((total, reservation) => {
+        return total + reservation.nombeHeureSeance;
+      }, 0);
+  
+      response.status(200).json({ totalHeures });
+    } catch (error) {
+      console.error('Erreur lors de la vérification des emplois:', error);
+      response.status(500).send('Erreur lors de la vérification des emplois');
+    }
+  },
 };
 
 module.exports = emploisController;
 
-
-
-// select * from salles where id not in ( 
-// select idSalle from reservation where data_satr es supprimer )
-
-
-
-// ------------2--4----------------------
-
-// const result= select * from salles where id in (select * from reservation where data_debut>=date_sata and data_fin < date_fin )
-
-// select * from salles where id not in (result);
 
