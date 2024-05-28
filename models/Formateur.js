@@ -51,8 +51,9 @@ function initialModelFormateur(sequelize) {
         tableName: "formateurs"
     });
 
-    Formateur.associate = ({ Module }) => {
-        Formateur.belongsToMany(Module, { through: 'module_formateur' });
+    Formateur.associate = ({ Module,Groupe }) => {
+        Formateur.belongsToMany(Module, { through: 'module_formateur',as:"modules" });
+        Formateur.belongsToMany(Groupe, { through: 'groupe_formateur' });
     };
 
     return Formateur;

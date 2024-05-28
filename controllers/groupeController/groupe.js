@@ -158,7 +158,25 @@ const groupeController = {
       response.status(500).send('Erreur lors de la suppression des groupes');
     }
   },
-  
+  getFormateurGroupe:async (request, response) => {
+    try {
+        const { idGroupe } = request.query;
+        if (!idGroupe) {
+            return response.status(400).send('ID du groupe manquant');
+        }
+
+        const groupe = await Groupe.findByPk(idGroupe);
+        if (!groupe) {
+            return response.status(404).send('Groupe non trouvé');
+        }
+
+        const formateurs = await groupe.getFormateurs();
+        response.status(200).json(formateurs);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Erreur lors de la récupération des formateurs');
+    }
+  },
 };
 
 module.exports = groupeController;

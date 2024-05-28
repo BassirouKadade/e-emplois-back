@@ -35,7 +35,8 @@ const Etablissement = initialModelEtablissement(sequelize); // Initialisation du
 // Associations entre les modèles si nécessaire
 Filiere.associate({ Module }); // Association entre Filiere et Module
 Module.associate({ Filiere, Formateur }); // Association entre Module et Filiere, et entre Module et Formateur
-Formateur.associate({ Module }); // Association entre Formateur et Module
+Groupe.associate({ Formateur }); // Association entre Module et Filiere, et entre Module et Formateur
+Formateur.associate({ Module ,Groupe}); // Association entre Formateur et Module
 User.associate({ Role }); // Association entre User et Role
 Role.associate({ User }); // Association entre Role et User
 Filiere.hasMany(Groupe, { foreignKey: 'id_filiere', as: 'groupes' });

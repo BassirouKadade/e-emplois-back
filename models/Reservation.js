@@ -12,7 +12,7 @@ function initialModelReservation(sequelize) {
         },
         startIndex: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: false
         },
         width:{
             type: DataTypes.INTEGER,
@@ -20,31 +20,35 @@ function initialModelReservation(sequelize) {
         },
         startEnd: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: false
         },
         startTop: {
             type: DataTypes.FLOAT,
-            allowNull: true
+            allowNull: false
         },
         nombeHeureSeance: {
             type: DataTypes.FLOAT,
-            allowNull: true
+            allowNull: false
         },
         typeReservation: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         salle: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         formateur: {
             type: DataTypes.STRING,
-            allowNull: true,
+            allowNull: false,
+        },
+        formateurInfo: {
+            type: DataTypes.STRING,
+            allowNull: false,
         }
         , module: {
             type: DataTypes.STRING,
-            allowNull: true,
+            allowNull: false,
         },
         groupe: {
             type: DataTypes.STRING,

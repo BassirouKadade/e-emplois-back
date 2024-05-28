@@ -1,4 +1,4 @@
-const { Formateur } = require('../../config/sequelize');
+const { Formateur, Groupe } = require('../../config/sequelize');
 const { Op } = require('sequelize');
 
 const formateurController = {
@@ -172,7 +172,113 @@ allFormateurs:async (request, response) => {
     response.status(500).json({ message: 'Error during fetchind data' });
   }
 },
+addGroupeFormateur: async (request, response) => {
+  try {
+      let { idGroupe, idFormateur } = request.body;
 
+      const errorServer = {};
+
+      if (!idGroupe || !idFormateur) {
+          errorServer.error = 'Tous les champs sont obligatoires';
+          return response.status(400).json(errorServer);
+      }
+
+      const formateurExiste = await Formateur.findByPk(idFormateur);
+
+      if (!formateurExiste) {
+          errorServer.notExisteFiliere = "Le formateur n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+      const groupeExiste = await Groupe.findByPk(idGroupe);
+
+      if (!groupeExiste) {
+          errorServer.notExisteModule = "Le groupe n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+
+      // Suppose que vous avez une association entre Filiere et Module
+      await formateurExiste.addGroupe(groupeExiste);
+
+      response.status(201).json({ success: "Module de filière ajouté avec succès" });
+  } catch (error) {
+      console.error(error);
+      response.status(500).send("Erreur lors de l'ajout du module");
+  }
+},getGroupeFormateur: async (request, response) => {
+  try {
+    const { id } = request.query;
+    const formateur = await Formateur.findByPk(id);
+    
+    if (!formateur) {
+      return response.status(404).json({ error: "Formateur non trouvée" });
+    }
+    
+    const groupes = await formateur.getGroupes();
+    response.status(200).json(groupes);
+  } catch (error) {
+    console.error(error);
+    response.status(500).send('Erreur lors de la récupération des modules');
+  }
+},
+getGroupesNonInclusFormateur: async (request, response) => {
+  try {
+      const { idFormateur } = request.query;
+      const formateurExist = await Formateur.findByPk(idFormateur);
+      
+      if (!formateurExist) {
+          return response.status(404).json({ error: "Formateur non trouvée" });
+      }
+      
+      const groupesFormateur = await formateurExist.getGroupes();
+      const listeIdGroupeFormateur = groupesFormateur.map((groupe) => groupe.id);
+
+      const groupes = await Groupe.findAll({
+          where: {
+              id: {
+                  [Op.notIn]: listeIdGroupeFormateur
+              }
+          }
+      });
+
+      response.status(200).json(groupes);
+  } catch (error) {
+      console.error(error);
+      response.status(500).send('Erreur lors de la récupération des modules');
+  }
+},
+formateurSupprimerGroupeormateur:async (request, response) => {
+  try {
+      let { idGroupe, idFormateur } = request.body;
+
+      const errorServer = {};
+
+      if (!idGroupe || !idFormateur) {
+          errorServer.error = 'Tous les champs sont obligatoires';
+          return response.status(400).json(errorServer);
+      }
+
+      const formateurExiste = await Formateur.findByPk(idFormateur);
+
+      if (!formateurExiste) {
+          errorServer.notExisteFormateur = "Le formateur n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+      const GroupeExiste = await Groupe.findByPk(idGroupe);
+
+      if (!GroupeExiste) {
+        errorServer.notExisteFormateur = "Le module n'existe pas";
+        return response.status(400).json(errorServer);
+    }
+console.log('e^poiuytredffghjlmlkjhgf')
+      // Suppose que vous avez une association entre Formateur et Module
+      await formateurExiste.removeGroupe(GroupeExiste);
+
+      response.status(201).json({ success: "Module de formateur supprimé avec succès" });
+  } catch (error) {
+      console.error(error);
+      response.status(500).send("Erreur lors de l'ajout du module");
+  }
+},
 }
 
 module.exports = formateurController;

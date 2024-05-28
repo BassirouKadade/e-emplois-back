@@ -42,6 +42,9 @@ function initialModelGroupe(sequelize) {
         tableName: "groupes"
     });
 
+    Groupe.associate = ({ Formateur }) => {
+        Groupe.belongsToMany(Formateur, { through: 'groupe_formateur',as:"formateurs"});
+    };
     return Groupe;
 }
 
