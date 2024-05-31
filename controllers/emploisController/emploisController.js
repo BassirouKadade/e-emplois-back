@@ -231,8 +231,93 @@ const emploisController = {
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
   }, 
-};
+  deleteReservationSeance: async (request, response) => {
+    try {
+      const { idReservation } = request.query;
+  
+      // Check if the idReservation parameter is provided
+      if (!idReservation) {
+        return response.status(400).json({ error: 'idReservation is required' });
+      }
+  
+      // Find the reservation by primary key
+      const reservationFind = await Reservation.findByPk(idReservation);
+  
+      // Check if the reservation exists
+      if (!reservationFind) {
+        return response.status(404).json({ error: 'Reservation not found' });
+      }
+  
+      // Delete the reservation
+      const reservationDeleted = await reservationFind.destroy();
+      const salleNom = reservationDeleted?.salle;
+      const salleNbrHeures = reservationDeleted?.nombeHeureSeance;
+  
+      // If the reservation has an associated room (salle)
+      if (salleNom) {
+        // Find the room by name
+        const salleFind = await Salle.findOne({
+          where: {
+            nom: {
+              [Op.eq]: salleNom
+            }
+          }
+        });
+  
+        // If the room is found, update its remaining hours
+        if (salleFind) {
+          salleFind.MREST += salleNbrHeures;
+          await salleFind.save();
+        }
+      }
+  
+      // Respond with a success message
+      response.status(200).json({ message: 'Reservation deleted successfully' });
+    } catch (error) {
+      // Log the error and respond with a server error status
+      console.error('Error deleting reservation:', error);
+      response.status(500).json({ error: 'An error occurred while deleting the reservation' });
+    }
+},
+getTotalGroupeSalleFormateur:async (request, response) => {
+  try {
+   
+    const FormateurFindAll= await Formateur.findAll();
+    const GrpupeFindAll= await Groupe.findAll();
+    const SalleFindAll= await Salle.findAll();
 
+    response.status(200).json({
+          formateurs:FormateurFindAll.length?FormateurFindAll.length:0,
+          salles:SalleFindAll.length?SalleFindAll.length:0,
+          groupes:GrpupeFindAll.length?GrpupeFindAll.length:0
+    });
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+},
+getEmploisDay:async (request, response) => {
+  try {
+    const { day } = request.query;
+    if (!day) {
+      return response.status(400).json({ error: 'Le paramètre day est requis' });
+    }
+
+    const emploisDayFind = await Reservation.findAll({
+      where: {
+        day: {
+          [Op.eq]: day
+        }
+      }
+    });
+
+    response.status(200).json(emploisDayFind);
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+}
+}
 module.exports = emploisController;
 
 
