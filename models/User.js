@@ -23,25 +23,20 @@ function initialModelUser(sequelize) {
             allowNull: false
         },
         refreshToken: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            allowNull: true
         },
         resetPasswordToken: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            allowNull: true
         },
         otpSecret: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            allowNull: true
         },
         authenticationToken: {
-            type: DataTypes.STRING
-        },
-        id_etablissement: { // Renamed from id_etablissement to match the naming convention
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
-                model: "etablissements", // Corrected 'etablissement' to 'Etablissement'
-                key: "id",
-                onDelete: "CASCADE"
-            }
+            type: DataTypes.STRING,
+            allowNull: true
         }
     }, {
         sequelize,
@@ -50,7 +45,11 @@ function initialModelUser(sequelize) {
     });
 
     User.associate = ({ Role }) => {
-        User.belongsToMany(Role, { through: 'user_role' });
+        User.belongsToMany(Role, { 
+            through: 'user_role',
+            onDelete: 'CASCADE' ,
+            as: 'roles'
+        });
     };
 
     return User;

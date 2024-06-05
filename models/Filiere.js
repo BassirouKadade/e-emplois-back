@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
+const { Groupe } = require('../config/sequelize');
 
 function initialModelFiliere(sequelize) {
     class Filiere extends Model {}
@@ -25,11 +26,11 @@ function initialModelFiliere(sequelize) {
         id_etablissement: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
+            references: {
                 model: "etablissements",
                 key: "id",
-                onDelete: "CASCADE"
-            }
+            },
+            onDelete: "CASCADE"
         }
     }, {
         sequelize,
@@ -37,10 +38,7 @@ function initialModelFiliere(sequelize) {
         tableName: "filieres"
     });
 
-    Filiere.associate = ({ Module }) => {
-        Filiere.belongsToMany(Module, { through: 'module_filiere' });
-    };
-
+   
     return Filiere;
 }
 

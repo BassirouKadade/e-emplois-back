@@ -20,8 +20,12 @@ function initialModelRole(sequelize) {
         tableName: "roles"
     });
 
-    Role.associate = ({ User }) => {
-        Role.belongsToMany(User, { through: 'user_role' });
+    Role.associate = ({User}) => {
+        Role.belongsToMany(User, { 
+            through: 'user_role',
+            onDelete: 'CASCADE' ,
+            as: 'users'
+        });
     };
 
     return Role;

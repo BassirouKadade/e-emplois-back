@@ -5,7 +5,7 @@ const emploisController = {
   verificationEmplois: async (request, response) => {
     try {
       const { day,idGroupe, start, end } = request.body;
-      console.log(request.body)
+
       if (start<0 || !day || end<0) {
         return response.status(400).json({ error: 'Start, end dates, and day are required' });
       }
@@ -30,16 +30,20 @@ const emploisController = {
       });
       const groupe = await Groupe.findByPk(idGroupe);
       const formateursGroupe = await groupe?.getFormateurs();
+    // formateur de groupe
       const formateursIds= formateursGroupe?  formateursGroupe.map(formateur => formateur.id):[];
+
+      // recuper les formateur de resrvations
+
       const reservedFormateurMat = reservations 
-      ? reservations.map(reservation => reservation.formateur).filter(formateur => formateur !== null)
+      ? reservations.map(reservation => reservation.idFormateur).filter(formateur => formateur !== null)
       : [];     
       
-      // console.log('rF',reservedFormateurMat)
+      // console.log(reservedFormateurMat)
       const formateurs = await Formateur.findAll({
         where: {
             [Op.and]: [
-                { matricule: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
+                { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
                 { id: { [Op.in]: formateursIds } }
             ]
         },
@@ -49,12 +53,12 @@ const emploisController = {
         }]
     });
     // console.log("form",formateurs)
-      const reservedSalleIds = reservations.map(reservation => reservation.salle);
+      const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
 
       const salles = await Salle.findAll({
           where: {
               [Op.and]: [
-                  { nom: { [Op.notIn]: reservedSalleIds } },
+                  { idSalle: { [Op.notIn]: reservedSalleIds } },
                   { MREST: { [Op.gt]: 0 } }
               ]
           }
@@ -66,71 +70,75 @@ const emploisController = {
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
   },
-  creerEmplois: async (request, response) => {
+  creerEmplois : async (request, response) => {
     try {
-      const {
-        startIndex,
-        startEnd,
-        idSalle,
-        idGroupe,
-        typeSeance,
-        day,
-        top,
-        width,
-        idFormateur,
-        idModule
-      } = request.body;
-  
-      // Vérification des paramètres requis
-      if (startIndex < 0 || !width || startEnd < 0 || !idGroupe || !typeSeance) {
-        return response.status(400).json({ error: 'Paramètres requis manquants' });
-      }
-  
-      const nombreSeance = width / 45;
-      const resultNombre = nombreSeance * 0.5;
-  
-      let salle = null;
-  
-      if (idSalle > 0) {
-        salle = await Salle.findByPk(idSalle);
-  
-        if (salle) {
-          salle.MREST -= resultNombre;
-          await salle.save();
+        const {
+            startIndex,
+            startEnd,
+            idSalle,
+            idGroupe,
+            typeSeance,
+            day,
+            top,
+            width,
+            idFormateur,
+            idModule
+        } = request.body;
+
+        // Vérification des paramètres requis
+        if (startIndex < 0 || !width || startEnd < 0 || !idGroupe || !typeSeance || !day || top === undefined) {
+            return response.status(400).json({ error: 'Paramètres requis manquants' });
         }
-      }
-  
-      const groupe = await Groupe.findByPk(idGroupe);
-      const formateur = await Formateur.findByPk(idFormateur);
-      const module = await Module.findByPk(idModule);
-  
-      await Reservation.create({
-        startIndex: startIndex,
-        startEnd: startEnd,
-        typeReservation: typeSeance,
-        groupe: groupe?.code, // Utiliser le code du groupe
-        salle: salle?.nom ?? '0', // Utiliser '0' si salle.nom est undefined
-        day: day,
-        width: width,
-        startTop: top,
-        formateur: formateur?.matricule,
-        module: module?.description,
-        nombeHeureSeance: resultNombre,
-        formateurInfo: `${formateur?.nom} ${formateur?.prenom}`
-      });
-  
-      const reservations = await Reservation.findAll({
-        where: {
-          groupe: groupe?.code
+
+        const nombreSeance = width / 45;
+        const resultNombre = nombreSeance * 0.5;
+
+        let salle = null;
+        if (idSalle > 0) {
+            salle = await Salle.findByPk(idSalle);
+            if (salle) {
+                salle.MREST -= resultNombre;
+                await salle.save();
+            }
         }
+
+        const groupe = await Groupe.findByPk(idGroupe);
+        const formateur = await Formateur.findByPk(idFormateur);
+        const module = await Module.findByPk(idModule);
+
+        // Création de la réservation
+         await Reservation.create({
+            startIndex: startIndex,
+            startEnd: startEnd,
+            typeReservation: typeSeance,
+            idSalle: salle ? salle.id : null,
+            idGroupe: groupe ? groupe.id : null,
+            day: day,
+            width: width,
+            startTop: top,
+            idFormateur: formateur ? formateur.id : null,
+            idModule: module ? module.id : null,
+            nombeHeureSeance: resultNombre
+        });
+
+        const reservations = await Reservation.findAll({
+          where: {
+              idGroupe: groupe ? groupe.id : null
+          },
+          include: [
+              { model: Salle, attributes: ['nom'] },
+              { model: Formateur, attributes: ['matricule', 'nom', 'prenom'] },
+              { model: Module, attributes: ['description'] },
+              { model: Groupe, attributes: ['code'] }
+          ]
       });
-  
-      response.status(200).json(reservations);
+      
+        response.status(200).json(reservations);
     } catch (error) {
-      console.error(error);
-      response.status(500).send('Erreur lors de la vérification de la planification des emplois');
+        console.error(error);
+        response.status(500).send('Erreur lors de la création de l\'emploi du temps');
     }
-  },
+},
   getEmplois: async (request, response) => {
     try {
       const { idGroupe } = request.query;
@@ -144,13 +152,20 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
-          groupe: { [Op.eq]: groupe.code } // Assuming 'groupe' refers to 'idGroupe'
-        }
+          idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'idGroupe'
+
+        },
+          include: [
+              { model: Salle, attributes: ['nom'] },
+              { model: Formateur, attributes: ['matricule', 'nom', 'prenom'] },
+              { model: Module, attributes: ['description'] },
+              { model: Groupe, attributes: ['code'] }
+          ]
       });
-  
+      console.log(reservations)
       response.status(200).json(reservations);
     } catch (error) {
-      console.error('Erreur lors de la vérification des emplois:', error);
+      console.error('Erreur lors de la vérification des emplois getEmploi:', error);
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
   },  
@@ -168,7 +183,7 @@ const emploisController = {
   
       const reservations = await Reservation.findAll({
         where: {
-          groupe: { [Op.eq]: groupe.code } // Assuming 'groupe' refers to 'code' field in the Reservation model
+          idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'code' field in the Reservation model
         },
         attributes: ['nombeHeureSeance'] // Only select the 'nombeHeureSeance' field
       });

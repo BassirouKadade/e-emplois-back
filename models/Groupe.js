@@ -21,30 +21,22 @@ function initialModelGroupe(sequelize) {
         id_filiere: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: { // Corrected 'refrences' to 'references'
+            references: {
                 model: "filieres",
                 key: "id",
-                onDelete: "CASCADE"
-            }
+            },
+            onDelete: "CASCADE"
         },
-        id_etablissement: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
-                model: "etablissements",
-                key: "id",
-                onDelete: "CASCADE"
-            }
-        }
     }, {
         sequelize,
         modelName: "Groupe",
         tableName: "groupes"
     });
 
-    Groupe.associate = ({ Formateur }) => {
-        Groupe.belongsToMany(Formateur, { through: 'groupe_formateur',as:"formateurs"});
+    Groupe.associate = ({Module}) => {
+        Groupe.belongsToMany(Module, { through: 'module_groupe',onDelete: 'CASCADE', as: "modules"  });
     };
+
     return Groupe;
 }
 

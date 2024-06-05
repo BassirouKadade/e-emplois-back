@@ -30,24 +30,25 @@ function initialModelModule(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true
         },
-        id_etablissement: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
-                model: "etablissements",
-                key: "id",
-                onDelete: "CASCADE"
-            }
-        }
+       
     }, {
         sequelize,
         modelName: "Module",
         tableName: "modules"
     });
 
-    Module.associate = ({ Filiere ,Formateur}) => {
-        Module.belongsToMany(Filiere, { through: 'module_filiere' });
-        Module.belongsToMany(Formateur, { through: 'module_formateur' });
+    Module.associate = ({Groupe,Formateur}) => {
+        Module.belongsToMany(Groupe, { 
+            through: 'module_groupe', 
+            onDelete: 'CASCADE',
+            as: 'groupes'
+        });
+        Module.belongsToMany(Formateur, { 
+            through: 'module_formateur', 
+            onDelete: 'CASCADE',
+            as: 'formateurs'
+        });
+      
     };
 
     return Module;

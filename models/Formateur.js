@@ -13,12 +13,11 @@ function initialModelFormateur(sequelize) {
         matricule: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true // Ensure matricule is unique
+            unique: true // Assurer que le matricule est unique
         },
         nom: {
             type: DataTypes.STRING,
             allowNull: false,
-           
         },
         prenom: {
             type: DataTypes.STRING,
@@ -27,9 +26,9 @@ function initialModelFormateur(sequelize) {
         email: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true, // Ensure email is unique
+            unique: true, // Assurer que l'email est unique
             validate: {
-                isEmail: true // Ensure email follows email format
+                isEmail: true // Assurer que l'email suit le format d'email
             }
         },
         metier: {
@@ -39,23 +38,20 @@ function initialModelFormateur(sequelize) {
         id_etablissement: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
+            references: {
                 model: "etablissements",
                 key: "id",
-                onDelete: "CASCADE"
-            }
+            },
+            onDelete: "CASCADE"
         }
     }, {
         sequelize,
         modelName: "Formateur",
         tableName: "formateurs"
-    });
+    })
 
-    Formateur.associate = ({ Module,Groupe }) => {
-        Formateur.belongsToMany(Module, { through: 'module_formateur',as:"modules" });
-        Formateur.belongsToMany(Groupe, { through: 'groupe_formateur' });
-    };
-
+    Formateur.associate = ({Module}) => {
+        Formateur.belongsToMany(Module, { through: 'module_formateur',onDelete: 'CASCADE', as: "modules" });    }
     return Formateur;
 }
 

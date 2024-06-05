@@ -14,7 +14,7 @@ function initialModelReservation(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        width:{
+        width: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -34,39 +34,58 @@ function initialModelReservation(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
-        salle: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        formateur: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        formateurInfo: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        }
-        , module: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        groupe: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        day:{
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        id_etablissement: {
+        idSalle: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
-                model: "etablissements",
+            references: {
+                model: "salles",
                 key: "id",
-                onDelete: "CASCADE"
-            }
-        }
+            },
+            onDelete: "CASCADE"
+        },
+        idFormateur: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "formateurs",
+                key: "id",
+              
+            },
+            onDelete: "CASCADE"
+        },
+        idModule: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "modules",
+                key: "id",
+               
+            },
+            onDelete: "CASCADE"
+        },
+        idGroupe: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "groupes",
+                key: "id",
+               
+            },
+            onDelete: "CASCADE"
+        },
+        day: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        // id_etablissement: {
+        //     type: DataTypes.INTEGER,
+        //     allowNull: true,
+        //     references: {
+        //         model: "etablissements",
+        //         key: "id",
+        //         onDelete: "CASCADE"
+        //     }
+        // }
     }, {
         sequelize,
         modelName: "Reservation",

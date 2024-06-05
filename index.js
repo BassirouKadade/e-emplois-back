@@ -42,7 +42,7 @@ app.use((err, req, res, next) => {
   try {
     await sequelize.authenticate();
     console.log('La connexion à la base de données a réussi');
-    await sequelize.sync({ force:false });
+    await sequelize.sync({ force:true });
     console.log('Les tables ont été synchronisées');
   } catch (e) {
     console.log('Une erreur est survenue lors d\'une opération');

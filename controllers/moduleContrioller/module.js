@@ -5,11 +5,12 @@ const moduleController = {
   ajouter: async (request, response) => {
     try {
       let { codeModule, description, masseHoraire, MHP, MHD } = request.body;
+      console.log(request.body)
       codeModule = codeModule.trim();
       description = description.trim();
       const errorServer = {};
 
-      if (!codeModule || !description || !masseHoraire || !MHP || !MHD) {
+      if (!codeModule || !description || !masseHoraire  || !MHP) {
         errorServer.error = 'Tous les champs sont obligatoires';
         return response.status(400).json(errorServer);
       }
@@ -85,7 +86,7 @@ const moduleController = {
       const errorServer = {};
 
       // Vérifier si tous les champs requis sont fournis
-      if (!codeModule || !description || !masseHoraire || !MHP || !MHD) {
+      if (!codeModule || !description || !masseHoraire || !MHP ) {
         errorServer.error = 'Tous les champs sont obligatoires';
         return response.status(400).json(errorServer);
       }

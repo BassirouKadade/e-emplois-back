@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 
-function initialModelSalle(sequelize) {
+function initialModelSalle(sequelize                                                                                  ) {
     class Salle extends Model {}
 
     Salle.init({
@@ -35,7 +35,7 @@ function initialModelSalle(sequelize) {
         id_etablissement: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: { // Corrected 'refrences' to 'references'
+            references: {
                 model: "etablissements",
                 key: "id",
                 onDelete: "CASCADE"
