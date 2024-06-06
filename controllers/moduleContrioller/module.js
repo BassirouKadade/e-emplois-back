@@ -288,7 +288,7 @@ getInfosFormateur:async (request, response) => {
     response.status(500).send('Erreur lors de la suppression des modules');
   }
 },
-getModuleFiliereGroupe: async (request, response) => {
+getModuleGroupe: async (request, response) => {
   try {
     // Extract idGroupe from the query parameters
     const { idGroupe } = request.query;
@@ -303,13 +303,7 @@ getModuleFiliereGroupe: async (request, response) => {
     }
 
     // Fetch the group details along with its associated filiere
-    const groupe = await Groupe.findOne({
-      where: { id: idGroupe },
-      include: {
-        model: Filiere,
-        as: 'filiere'
-      }
-    });
+    const groupe = await Groupe.findByPk(idGroupe)
 
     // Check if the group exists
     if (!groupe) {
@@ -317,18 +311,8 @@ getModuleFiliereGroupe: async (request, response) => {
       return response.status(404).json(errorServer);
     }
 
-    // Get the associated filiere of the group
-    const filiere = groupe.filiere;
-
-    // Check if the filiere exists for the group
-    if (!filiere) {
-      errorServer.error = "Aucune filière trouvée pour ce groupe";
-      return response.status(404).json(errorServer);
-    }
-
     // Fetch modules associated with the filiere
-    const modules = await filiere.getModules();
-
+    const modules = await groupe.getModules();
     // Send the modules as a JSON response
     response.status(200).json(modules);
   } catch (error) {

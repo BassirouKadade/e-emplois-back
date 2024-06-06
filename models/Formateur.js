@@ -50,8 +50,10 @@ function initialModelFormateur(sequelize) {
         tableName: "formateurs"
     })
 
-    Formateur.associate = ({Module}) => {
-        Formateur.belongsToMany(Module, { through: 'module_formateur',onDelete: 'CASCADE', as: "modules" });    }
+    Formateur.associate = ({Module,Groupe}) => {
+        Formateur.belongsToMany(Module, { through: 'module_formateur',onDelete: 'CASCADE', as: "modules" }); 
+        Formateur.belongsToMany(Groupe, { through: 'groupe_formateur',onDelete: 'CASCADE', as: "groupes" });    
+    }
     return Formateur;
 }
 

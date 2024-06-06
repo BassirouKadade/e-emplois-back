@@ -1,4 +1,4 @@
-const { Groupe ,Filiere} = require('../../config/sequelize');
+const { Groupe ,Filiere, Module} = require('../../config/sequelize');
 const { Op } = require('sequelize');
 
 const groupeController = {
@@ -30,7 +30,7 @@ const groupeController = {
     }
   },
 
-  liste:async (request, response) => {
+  liste: async (request, response) => {
     try {
         const page = parseInt(request.query.page, 10) || 1;
         const limit = 6; // Nombre d'éléments par page
@@ -39,10 +39,13 @@ const groupeController = {
         const { count, rows } = await Groupe.findAndCountAll({
             limit,
             offset,
-            include: {
-                model: Filiere,
-                as: 'filiere'
-            }
+            include: [
+                {
+                    model: Filiere,
+                    as: 'filiere'
+                },
+
+            ]
         });
 
         const totalPages = Math.ceil(count / limit); // Nombre total de pages
@@ -50,14 +53,13 @@ const groupeController = {
         response.status(200).json({
             totalPages,
             currentPage: page,
-            formateurs: rows,
+            formateurs: rows, // Renvoie les groupes avec leurs filières et modules associés avec état d'avancement
         });
     } catch (error) {
         console.error(error);
         response.status(500).send('Erreur lors de la récupération des groupes');
     }
 },
-  
   supprimer: async (request, response) => {
     try {
       console.log(request.params.ids);
@@ -177,6 +179,128 @@ const groupeController = {
         response.status(500).send('Erreur lors de la récupération des formateurs');
     }
   },
+  allModulesGroupe: async (request, response) => {
+    try {
+        const { groupe } = request.query;
+        const groupeExist = await Groupe.findByPk(groupe);
+        
+        if (!groupeExist) {
+            return response.status(404).json({ error: "Groupe non trouvée" });
+        }
+        
+        const modulesGroupe = await groupeExist.getModules();
+        const listeIdModuleGroupe = modulesGroupe.map((module) => module.id);
+  
+        const modules = await Module.findAll({
+            where: {
+                id: {
+                    [Op.notIn]: listeIdModuleGroupe
+                }
+            }
+        });
+  
+        response.status(200).json(modules);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Erreur lors de la récupération des modules');
+    }
+},
+modulesGroupeDisponible: async (request, response) => {
+  try {
+    const { id } = request.query;
+    const groupe = await Groupe.findByPk(id);
+    
+    if (!groupe) {
+      return response.status(404).json({ error: "groupe non trouvée" });
+    }
+    
+    const modules = await groupe.getModules();
+    response.status(200).json(modules);
+  } catch (error) {
+    console.error(error);
+    response.status(500).send('Erreur lors de la récupération des modules');
+  }
+},
+getInfosGroupe:async (request, response) => {
+  try {
+    const {id}=request.query
+    const groupe=await Groupe.findByPk(id);
+    const  errorServer={};
+    if (!groupe) {
+      errorServer.errorNotExiste = 'Violation,la groupe n"existe pas';
+      return response.status(404).json(errorServer);
+    }
+    response.status(200).json(groupe);
+  } catch (error) {
+    console.error(error);
+    response.status(500).send('Erreur lors de la suppression des modules');
+  }
+},
+ajouterModuleGroupe: async (request, response) => {
+  try {
+      let { idModule, idGroupe } = request.body;
+
+      const errorServer = {};
+
+      if (!idModule || !idGroupe) {
+          errorServer.error = 'Tous les champs sont obligatoires';
+          return response.status(400).json(errorServer);
+      }
+
+      const groupeExiste = await Groupe.findByPk(idGroupe);
+
+      if (!groupeExiste) {
+          errorServer.notExisteFiliere = "Le groupe n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+      const moduleExiste = await Module.findByPk(idModule);
+
+      if (!moduleExiste) {
+          errorServer.notExisteModule = "Le module n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+
+      // Suppose que vous avez une association entre Filiere et Module
+      await groupeExiste.addModule(moduleExiste, { through: { etat_avancement: 0 } });
+
+      response.status(201).json({ success: "Module de filière ajouté avec succès" });
+  } catch (error) {
+      console.error(error);
+      response.status(500).send("Erreur lors de l'ajout du module");
+  }
+},
+supprimerModuleGroupe: async (request, response) => {
+  try {
+      let { idModule, idGroupe } = request.body;
+      const errorServer = {};
+
+      if (!idModule || !idGroupe) {
+          errorServer.error = 'Tous les champs sont obligatoires';
+          return response.status(400).json(errorServer);
+      }
+
+      const groupeExiste = await Groupe.findByPk(idGroupe);
+
+      if (!groupeExiste) {
+          errorServer.notExisteFiliere = "La groupe n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+      const moduleExiste = await Module.findByPk(idModule);
+
+      if (!moduleExiste) {
+          errorServer.notExisteModule = "Le module n'existe pas";
+          return response.status(400).json(errorServer);
+      }
+
+      // Suppose que vous avez une association entre Filiere et Module
+      await groupeExiste.removeModule(moduleExiste);
+
+      response.status(201).json({ success: "Module de filière supprimé avec succès" });
+  } catch (error) {
+      console.error(error);
+      response.status(500).send("Erreur lors de la suppression du module");
+  }
+},
 };
 
 module.exports = groupeController;

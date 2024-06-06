@@ -8,8 +8,7 @@ const { initialModelSalle } = require('../models/Salle'); // Importation du mod�
 const { initialModelReservation } = require('../models/Reservation'); // Importation du modèle Reservation
 const { initialModelEtablissement } = require('../models/Etablissement'); // Importation du modèle Etablissement
 const { initialModelFormateur } = require('../models/Formateur'); // Importation du modèle Formateur
-
-
+const {initialModelGroupeModule}=require('../models/GroupeModule')
 // Création de l'instance Sequelize avec les informations de connexion à la base de données
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.USERNAME_APP, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
@@ -30,7 +29,9 @@ const Salle = initialModelSalle(sequelize); // Initialisation du modèle Salle
 const Reservation = initialModelReservation(sequelize); // Initialisation du modèle Reservation
  const Etablissement = initialModelEtablissement(sequelize); // Initialisation du modèle Etablissement
  const Formateur = initialModelFormateur(sequelize); // Initialisation du modèle Formateur
+ const GroupeModule = initialModelGroupeModule(sequelize); // Initialisation du modèle Formateur
 
+ 
 
 
 /*
@@ -151,11 +152,11 @@ Salle.belongsTo(Etablissement, {
 //  Relation Filiere et Module Many To Many
 */
 
-Groupe.associate({ Module }); // Association entre Groupe et Module
+Groupe.associate({ Module ,GroupeModule,Formateur}); // Association entre Groupe et Module
 User.associate({ Role }); // Association entre User et Role
 Role.associate({ User }); // Association entre Role et User
-Formateur.associate({ Module }); // Association entre Formateur et Module
-Module.associate({ Groupe, Formateur }); // Associations entre Module et Groupe, et entre Module et Formateur
+Formateur.associate({ Module ,Groupe}); // Association entre Formateur et Module
+Module.associate({ Groupe, Formateur,GroupeModule }); // Associations entre Module et Groupe, et entre Module et Formateur
 
 
 
@@ -170,5 +171,6 @@ module.exports = {
   Formateur,
   Salle,
   Reservation,
-  Etablissement
+  Etablissement,
+  GroupeModule
 };

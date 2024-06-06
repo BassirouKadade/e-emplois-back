@@ -18,6 +18,11 @@ function initialModelGroupe(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
+        etat_avancement: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: 0
+        },
         id_filiere: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -33,8 +38,10 @@ function initialModelGroupe(sequelize) {
         tableName: "groupes"
     });
 
-    Groupe.associate = ({Module}) => {
-        Groupe.belongsToMany(Module, { through: 'module_groupe',onDelete: 'CASCADE', as: "modules"  });
+    Groupe.associate = ({Module,GroupeModule,Formateur }) => {
+        Groupe.belongsToMany(Module, { through: GroupeModule ,onDelete: 'CASCADE', as: "modules"  });
+        Groupe.belongsToMany(Formateur, { through: 'groupe_formateur',onDelete: 'CASCADE', as: "formateurs" });    
+
     };
 
     return Groupe;

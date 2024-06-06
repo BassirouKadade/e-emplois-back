@@ -37,9 +37,9 @@ function initialModelModule(sequelize) {
         tableName: "modules"
     });
 
-    Module.associate = ({Groupe,Formateur}) => {
+    Module.associate = ({Groupe,Formateur,GroupeModule }) => {
         Module.belongsToMany(Groupe, { 
-            through: 'module_groupe', 
+            through: GroupeModule , 
             onDelete: 'CASCADE',
             as: 'groupes'
         });

@@ -1,6 +1,6 @@
 const express = require('express');
 const moduleRoute = express.Router();
-const { getModuleFiliereGroupe,ajouter,ajouterModuleFormateur,getInfosFormateur,supprimerModuleFormateur, allModules,modulesFormateur, supprimer, update, searchNext, liste } = require('../controllers/moduleContrioller/module');
+const { getModuleGroupe,ajouter,ajouterModuleFormateur,getInfosFormateur,supprimerModuleFormateur, allModules,modulesFormateur, supprimer, update, searchNext, liste } = require('../controllers/moduleContrioller/module');
 
 moduleRoute.post('/ajouter-module', ajouter);
 moduleRoute.get('/liste-module', liste);
@@ -12,5 +12,5 @@ moduleRoute.get('/modules-formateur', modulesFormateur);
 moduleRoute.post('/ajouter-module-formateur', ajouterModuleFormateur);
 moduleRoute.post('/supprimer-module-formateur', supprimerModuleFormateur);
 moduleRoute.get('/getinfos-formateur', getInfosFormateur);
-moduleRoute.get('/get-module-filiere-groupe', getModuleFiliereGroupe);
+moduleRoute.get('/get-module-groupe', getModuleGroupe);
 module.exports = moduleRoute;

@@ -1,4 +1,4 @@
-const { Reservation, Salle, Groupe, Formateur, Module } = require('../../config/sequelize');
+const { Reservation, Salle, Groupe, Formateur, Module, GroupeModule } = require('../../config/sequelize');
 const { Op } = require('sequelize');
 
 const emploisController = {
@@ -28,7 +28,10 @@ const emploisController = {
           ]
         }
       });
+
       const groupe = await Groupe.findByPk(idGroupe);
+      const moduleGroupesFInd=await groupe.getModules();
+      const idModuleGroupe=moduleGroupesFInd.map(module=>module.id)
       const formateursGroupe = await groupe?.getFormateurs();
     // formateur de groupe
       const formateursIds= formateursGroupe?  formateursGroupe.map(formateur => formateur.id):[];
@@ -49,16 +52,23 @@ const emploisController = {
         },
         include: [{
             model: Module,
-            as:"modules"  
+            as: "modules",
+            where: {
+                id: { [Op.in]: idModuleGroupe }
+            }
         }]
     });
+    
     // console.log("form",formateurs)
-      const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
-
+      // const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
+      
+      const reservedSalleIds = reservations 
+      ? reservations.map(reservation => reservation.idSalle).filter(salle => salle !== null)
+      : [];  
       const salles = await Salle.findAll({
           where: {
               [Op.and]: [
-                  { idSalle: { [Op.notIn]: reservedSalleIds } },
+                  { id: { [Op.notIn]: reservedSalleIds } },
                   { MREST: { [Op.gt]: 0 } }
               ]
           }
@@ -70,75 +80,133 @@ const emploisController = {
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
   },
-  creerEmplois : async (request, response) => {
+  creerEmplois: async (request, response) => {
     try {
-        const {
-            startIndex,
-            startEnd,
-            idSalle,
-            idGroupe,
-            typeSeance,
-            day,
-            top,
-            width,
-            idFormateur,
-            idModule
-        } = request.body;
-
-        // Vérification des paramètres requis
-        if (startIndex < 0 || !width || startEnd < 0 || !idGroupe || !typeSeance || !day || top === undefined) {
-            return response.status(400).json({ error: 'Paramètres requis manquants' });
+      const {
+        startIndex,
+        startEnd,
+        idSalle,
+        idGroupe,
+        typeSeance,
+        day,
+        top,
+        width,
+        idFormateur,
+        idModule
+      } = request.body;
+  
+      // Vérification des paramètres requis
+      if (
+        startIndex === undefined || startIndex < 0 ||
+        width === undefined || width <= 0 ||
+        startEnd === undefined || startEnd < 0 ||
+        !idGroupe ||
+        !typeSeance ||
+        !day ||
+        top === undefined
+      ) {
+        return response.status(400).json({ error: 'Paramètres requis manquants' });
+      }
+  
+      const nombreSeance = width / 45;
+      const resultNombre = nombreSeance * 0.5;
+  
+      let salle = null;
+      if (idSalle > 0) {
+        salle = await Salle.findByPk(idSalle);
+        if (salle) {
+          salle.MREST -= resultNombre;
+          await salle.save();
         }
-
-        const nombreSeance = width / 45;
-        const resultNombre = nombreSeance * 0.5;
-
-        let salle = null;
-        if (idSalle > 0) {
-            salle = await Salle.findByPk(idSalle);
-            if (salle) {
-                salle.MREST -= resultNombre;
-                await salle.save();
-            }
-        }
-
-        const groupe = await Groupe.findByPk(idGroupe);
-        const formateur = await Formateur.findByPk(idFormateur);
-        const module = await Module.findByPk(idModule);
-
-        // Création de la réservation
-         await Reservation.create({
-            startIndex: startIndex,
-            startEnd: startEnd,
-            typeReservation: typeSeance,
-            idSalle: salle ? salle.id : null,
-            idGroupe: groupe ? groupe.id : null,
-            day: day,
-            width: width,
-            startTop: top,
-            idFormateur: formateur ? formateur.id : null,
-            idModule: module ? module.id : null,
-            nombeHeureSeance: resultNombre
-        });
-
-        const reservations = await Reservation.findAll({
-          where: {
-              idGroupe: groupe ? groupe.id : null
-          },
-          include: [
-              { model: Salle, attributes: ['nom'] },
-              { model: Formateur, attributes: ['matricule', 'nom', 'prenom'] },
-              { model: Module, attributes: ['description'] },
-              { model: Groupe, attributes: ['code'] }
-          ]
+      }
+  
+      const groupe = await Groupe.findByPk(idGroupe);
+      const formateur = await Formateur.findByPk(idFormateur);
+      const module = await Module.findByPk(idModule);
+  
+      if (!groupe || !formateur || !module) {
+        return response.status(404).json({ error: 'Groupe, formateur ou module non trouvé' });
+      }
+  
+      // Création de la réservation
+      await Reservation.create({
+        startIndex: startIndex,
+        startEnd: startEnd,
+        typeReservation: typeSeance,
+        idSalle: salle ? salle.id : null,
+        idGroupe: groupe.id,
+        day: day,
+        width: width,
+        startTop: top,
+        idFormateur: formateur.id,
+        idModule: module.id,
+        nombeHeureSeance: resultNombre
       });
-      
-        response.status(200).json(reservations);
+  
+      // Mise à jour de l'état d'avancement du groupe module
+      const masseHoraireTotalModule = module.masseHoraire;
+      const masseHoraireReserMod = await Reservation.findAll({
+        where: { idModule: module.id }
+      });
+  
+      const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
+        return total + reservation.nombeHeureSeance;
+      }, 0);
+  
+      const avancementPourcent = (masseHoraireTotale / masseHoraireTotalModule) * 100;
+  
+      let groupeModule = await GroupeModule.findOne({
+        where: { GroupeId: groupe.id, ModuleId: module.id }
+      });
+  
+      if (groupeModule) {
+        groupeModule.etat_avancement = avancementPourcent;
+        await groupeModule.save();
+        console.log('État d\'avancement mis à jour avec succès.');
+      } else {
+        console.log('L\'association entre le groupe et le module n\'existe pas.');
+      }
+  
+      // Calcul de l'état d'avancement total du groupe
+      const reservationsGroupe = await Reservation.findAll({
+        where: { idGroupe: idGroupe }
+      });
+      const modulesAvecReservations = [...new Set(reservationsGroupe.map(reservation => reservation.idModule))];
+  
+      const etatsAvancementModules = await Promise.all(modulesAvecReservations.map(async (moduleId) => {
+        const groupeModule = await GroupeModule.findOne({ where: { GroupeId:groupe.id, ModuleId: moduleId } });
+        if (groupeModule) {
+          return { moduleId, etatAvancement: groupeModule.etat_avancement };
+        } else {
+          return { moduleId, etatAvancement: null };
+        }
+      }));
+  
+      const etatFinale = etatsAvancementModules.map(module => module.etatAvancement);
+      const etatTotale = etatFinale.reduce((total, etat) => parseInt(total) + parseInt(etat), 0);
+      const modules = await groupe.getModules();
+      const lengthListe = modules.length*100;  
+      const etatTotaleAvancementPourCent = (etatTotale / lengthListe) * 100;
+      groupe.etat_avancement = Math.round(etatTotaleAvancementPourCent);
+      await groupe.save();
+  
+      // Récupération de toutes les réservations du groupe avec leurs détails
+      const reservations = await Reservation.findAll({
+        where: { idGroupe: groupe.id },
+        include: [
+          { model: Salle, as: "salle", attributes: ['nom'] },
+          { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
+          { model: Module, as: "module", attributes: ['codeModule', 'description'] },
+          { model: Groupe, as: "groupe", attributes: ['code'] }
+        ]
+      });
+  
+      response.status(200).json(reservations);
     } catch (error) {
-        console.error(error);
-        response.status(500).send('Erreur lors de la création de l\'emploi du temps');
+      console.error(error);
+      response.status(500).send('Erreur lors de la création de l\'emploi du temps');
     }
-},
+  },  
   getEmplois: async (request, response) => {
     try {
       const { idGroupe } = request.query;
@@ -156,13 +224,12 @@ const emploisController = {
 
         },
           include: [
-              { model: Salle, attributes: ['nom'] },
-              { model: Formateur, attributes: ['matricule', 'nom', 'prenom'] },
-              { model: Module, attributes: ['description'] },
-              { model: Groupe, attributes: ['code'] }
+              { model: Salle, as:"salle", attributes: ['nom'] },
+              { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+              { model: Module,as:"module", attributes: ['codeModule','description'] },
+              { model: Groupe, as:"groupe",attributes: ['code'] }
           ]
       });
-      console.log(reservations)
       response.status(200).json(reservations);
     } catch (error) {
       console.error('Erreur lors de la vérification des emplois getEmploi:', error);
@@ -212,8 +279,13 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
-          salle: { [Op.eq]: salle.nom } // Assuming 'groupe' refers to 'idGroupe'
-        }
+          idSalle: { [Op.eq]: salle?.id } // Assuming 'groupe' refers to 'idGroupe'
+        },
+        include: [
+          { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+          { model: Module,as:"module", attributes: ['codeModule','description'] },
+          { model: Groupe, as:"groupe",attributes: ['code'] }
+      ]
       });
   
       response.status(200).json(reservations);
@@ -235,10 +307,15 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
-          formateur: { [Op.eq]: FormateurFind?.matricule } // Assuming 'groupe' refers to 'idGroupe'
-        }
+          idFormateur: { [Op.eq]: FormateurFind?.id } // Assuming 'groupe' refers to 'idGroupe'
+        },
+        include: [
+          { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+          { model: Module,as:"module", attributes: ['codeModule','description'] },
+          { model: Groupe, as:"groupe",attributes: ['code'] },
+          { model: Salle, as:"salle", attributes: ['nom'] },
+      ]
       });
-      console.log(reservations)
   
       response.status(200).json(reservations);
     } catch (error) {
@@ -265,7 +342,7 @@ const emploisController = {
   
       // Delete the reservation
       const reservationDeleted = await reservationFind.destroy();
-      const salleNom = reservationDeleted?.salle;
+      const salleNom = reservationDeleted?.idSalle;
       const salleNbrHeures = reservationDeleted?.nombeHeureSeance;
   
       // If the reservation has an associated room (salle)
@@ -273,7 +350,7 @@ const emploisController = {
         // Find the room by name
         const salleFind = await Salle.findOne({
           where: {
-            nom: {
+            id: {
               [Op.eq]: salleNom
             }
           }
@@ -285,7 +362,59 @@ const emploisController = {
           await salleFind.save();
         }
       }
+
+
+      
+      const groupe = await Groupe.findByPk(reservationDeleted.idGroupe);
+      const module = await Module.findByPk(reservationDeleted.idModule);
+      
+      const masseHoraireTotalModule = module.masseHoraire;
+      const masseHoraireReserMod = await Reservation.findAll({
+        where: {
+          idModule: module.id
+        }
+      });
   
+      const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
+        return total + reservation.nombeHeureSeance;
+      }, 0);
+  
+      const avancementPourcent = (masseHoraireTotale / masseHoraireTotalModule) * 100;
+  
+      const groupeModule = await GroupeModule.findOne({
+        where: {
+          GroupeId: groupe.id,
+          ModuleId: module.id,
+        },
+      });
+  
+      if (groupeModule) {
+        // Mettre à jour l'état d'avancement
+        groupeModule.etat_avancement = avancementPourcent;
+        await groupeModule.save();
+      } 
+       // Calcul de l'état d'avancement total du groupe
+       const reservationsGroupe = await Reservation.findAll({
+        where: { idGroupe: reservationDeleted.idGroupe }
+      });
+      const modulesAvecReservations = [...new Set(reservationsGroupe.map(reservation => reservation.idModule))];
+  
+      const etatsAvancementModules = await Promise.all(modulesAvecReservations.map(async (moduleId) => {
+        const groupeModule = await GroupeModule.findOne({ where: {GroupeId: reservationDeleted.idGroupe, ModuleId: moduleId } });
+        if (groupeModule) {
+          return { moduleId, etatAvancement: groupeModule.etat_avancement };
+        } else {
+          return { moduleId, etatAvancement: null };
+        }
+      }));
+  
+      const etatFinale = etatsAvancementModules.map(module => module.etatAvancement);
+      const etatTotale = etatFinale.reduce((total, etat) => parseInt(total) + parseInt(etat), 0);
+      const modules = await groupe.getModules();
+      const lengthListe = modules.length*100;  
+      const etatTotaleAvancementPourCent = (etatTotale / lengthListe) * 100;
+      groupe.etat_avancement = Math.round(etatTotaleAvancementPourCent);
+      await groupe.save();
       // Respond with a success message
       response.status(200).json({ message: 'Reservation deleted successfully' });
     } catch (error) {
@@ -323,7 +452,13 @@ getEmploisDay:async (request, response) => {
         day: {
           [Op.eq]: day
         }
-      }
+      },
+      include: [
+        { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+        { model: Module,as:"module", attributes: ['codeModule','description'] },
+        { model: Groupe, as:"groupe",attributes: ['code'] },
+        { model: Salle, as:"salle", attributes: ['nom'] },
+    ]
     });
 
     response.status(200).json(emploisDayFind);
