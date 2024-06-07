@@ -261,7 +261,7 @@ ajouterModuleGroupe: async (request, response) => {
       }
 
       // Suppose que vous avez une association entre Filiere et Module
-      await groupeExiste.addModule(moduleExiste, { through: { etat_avancement: 0 } });
+      await groupeExiste.addModule(moduleExiste, { through: {dr:moduleExiste?.masseHoraire, etat_avancement: 0 } });
 
       response.status(201).json({ success: "Module de filière ajouté avec succès" });
   } catch (error) {

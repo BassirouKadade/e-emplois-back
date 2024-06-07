@@ -46,16 +46,17 @@ const emploisController = {
         where: {
           etat_avancement: {
             [Op.lt]: 100
+          },
+          GroupeId:{
+               [Op.eq]: groupe.id 
           }
         }
       });
-      
       const modulesIdFind = modulesId.map(module => module.ModuleId);
-      
-      console.log(modulesIdFind);
+
       
       // console.log(reservedFormateurMat)
-      const formateurs = await Formateur.findAll({
+      const formateursAvecModules = await Formateur.findAll({
         where: {
           [Op.and]: [
             { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
@@ -70,10 +71,37 @@ const emploisController = {
               { id: { [Op.in]: idModuleGroupe } },
               { id: { [Op.in]: modulesIdFind } }
             ]
-          }
+          },
         }]
       });
             
+
+    
+      const formateurs = await Promise.all(formateursAvecModules.map(async formateur => {
+        const formateurAvecModules = {
+          id: formateur.id,
+          nom: formateur.nom,
+          prenom: formateur.prenom,
+          modules: await Promise.all(formateur.modules.map(async module => {
+            const groupeModule = await GroupeModule.findOne({
+              where: {
+                ModuleId: module.id
+              }
+            });
+            const dr = groupeModule ? groupeModule.dr : null;
+            // obtenir l'état d'avancement pour ce module et ce formateur
+            return {
+              id: module.id,
+              description: module.description,
+              dureeRest:dr // Ajouter l'état d'avancement au module
+            };
+          }))
+        };
+        return formateurAvecModules;
+      }));
+      
+      // console.log(formateursAvecModules);
+      
     // console.log("form",formateurs)
       // const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
       
@@ -176,7 +204,9 @@ const emploisController = {
   
       if (groupeModule) {
         groupeModule.etat_avancement = avancementPourcent;
+        groupeModule.dr -=resultNombre;
         await groupeModule.save();
+        console.log('d',groupeModule)
         console.log('État d\'avancement mis à jour avec succès.');
       } else {
         console.log('L\'association entre le groupe et le module n\'existe pas.');
@@ -406,6 +436,7 @@ const emploisController = {
       if (groupeModule) {
         // Mettre à jour l'état d'avancement
         groupeModule.etat_avancement = avancementPourcent;
+        groupeModule.dr += reservationDeleted.nombeHeureSeance;
         await groupeModule.save();
       } 
        // Calcul de l'état d'avancement total du groupe
