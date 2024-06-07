@@ -42,23 +42,38 @@ const emploisController = {
       ? reservations.map(reservation => reservation.idFormateur).filter(formateur => formateur !== null)
       : [];     
       
+      const modulesId = await GroupeModule.findAll({
+        where: {
+          etat_avancement: {
+            [Op.lt]: 100
+          }
+        }
+      });
+      
+      const modulesIdFind = modulesId.map(module => module.ModuleId);
+      
+      console.log(modulesIdFind);
+      
       // console.log(reservedFormateurMat)
       const formateurs = await Formateur.findAll({
         where: {
-            [Op.and]: [
-                { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
-                { id: { [Op.in]: formateursIds } }
-            ]
+          [Op.and]: [
+            { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
+            { id: { [Op.in]: formateursIds } }
+          ]
         },
         include: [{
-            model: Module,
-            as: "modules",
-            where: {
-                id: { [Op.in]: idModuleGroupe }
-            }
+          model: Module,
+          as: "modules",
+          where: {
+            [Op.and]: [
+              { id: { [Op.in]: idModuleGroupe } },
+              { id: { [Op.in]: modulesIdFind } }
+            ]
+          }
         }]
-    });
-    
+      });
+            
     // console.log("form",formateurs)
       // const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
       
