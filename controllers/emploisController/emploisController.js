@@ -85,7 +85,9 @@ const emploisController = {
           modules: await Promise.all(formateur.modules.map(async module => {
             const groupeModule = await GroupeModule.findOne({
               where: {
-                ModuleId: module.id
+                ModuleId: module.id,
+                GroupeId: groupe.id
+
               }
             });
             const dr = groupeModule ? groupeModule.dr : null;
@@ -166,11 +168,23 @@ const emploisController = {
       const groupe = await Groupe.findByPk(idGroupe);
       const formateur = await Formateur.findByPk(idFormateur);
       const module = await Module.findByPk(idModule);
-  
+      const masseHoraireTotalModule = module.masseHoraire;
+
       if (!groupe || !formateur || !module) {
         return response.status(404).json({ error: 'Groupe, formateur ou module non trouvé' });
       }
+
+      // ************************************
+      const masseHoraireReserModPre = await Reservation.findAll({
+        where: { idModule: module.id,idGroupe: groupe.id }
+      });
   
+      const masseHoraireTotalePre = masseHoraireReserModPre.reduce((total, reservation) => {
+        return total + reservation.nombeHeureSeance;
+      }, 0);
+      const avancementPourcentPRE = (masseHoraireTotalePre / masseHoraireTotalModule) * 100;
+
+      
       // Création de la réservation
       await Reservation.create({
         startIndex: startIndex,
@@ -187,9 +201,8 @@ const emploisController = {
       });
   
       // Mise à jour de l'état d'avancement du groupe module
-      const masseHoraireTotalModule = module.masseHoraire;
       const masseHoraireReserMod = await Reservation.findAll({
-        where: { idModule: module.id }
+        where: { idModule: module.id,idGroupe: groupe.id }
       });
   
       const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
@@ -202,11 +215,17 @@ const emploisController = {
         where: { GroupeId: groupe.id, ModuleId: module.id }
       });
   
+      let pourcentagePrecedante=0;
+     if(groupeModule.etat_avancement-avancementPourcentPRE <=0){
+      pourcentagePrecedante=0
+     }else{
+      pourcentagePrecedante=groupeModule.etat_avancement-avancementPourcentPRE
+     };
+
       if (groupeModule) {
-        groupeModule.etat_avancement = avancementPourcent;
+        groupeModule.etat_avancement = avancementPourcent+pourcentagePrecedante;
         groupeModule.dr -=resultNombre;
         await groupeModule.save();
-        console.log('d',groupeModule)
         console.log('État d\'avancement mis à jour avec succès.');
       } else {
         console.log('L\'association entre le groupe et le module n\'existe pas.');
@@ -416,7 +435,8 @@ const emploisController = {
       const masseHoraireTotalModule = module.masseHoraire;
       const masseHoraireReserMod = await Reservation.findAll({
         where: {
-          idModule: module.id
+          idModule: module.id,
+          idGroupe: groupe.id
         }
       });
   
@@ -512,7 +532,93 @@ getEmploisDay:async (request, response) => {
     console.error('Erreur lors de la vérification des emplois:', error);
     response.status(500).send('Erreur lors de la vérification des emplois');
   }
-}
+},
+deleteReservationSeanceupdate: async (request, response) => {
+  try {
+    const { idReservation } = request.query;
+
+    // Check if the idReservation parameter is provided
+    if (!idReservation) {
+      return response.status(400).json({ error: 'idReservation is required' });
+    }
+
+    // Find the reservation by primary key
+    const reservationFind = await Reservation.findByPk(idReservation);
+
+    // Check if the reservation exists
+    if (!reservationFind) {
+      return response.status(404).json({ error: 'Reservation not found' });
+    }
+
+    // Delete the reservation
+    const reservationDeleted = await reservationFind.destroy();
+    const salleNom = reservationDeleted?.idSalle;
+     const salleNbrHeures = reservationDeleted?.nombeHeureSeance;
+
+  
+    // If the reservation has an associated room (salle)
+    if (salleNom) {
+      // Find the room by name
+      const salleFind = await Salle.findOne({
+        where: {
+          id: {
+            [Op.eq]: salleNom
+          }
+        }
+      });
+
+      // If the room is found, update its remaining hours
+      if (salleFind) {
+        salleFind.MREST += salleNbrHeures;
+        await salleFind.save();
+      }
+    }
+
+       
+    // const groupe = await Groupe.findByPk(reservationDeleted.idGroupe);
+    // const module = await Module.findByPk(reservationDeleted.idModule);
+    
+    // const masseHoraireTotalModule = module.masseHoraire;
+
+    // const avancementPourcentPRE = (salleNbrHeures / masseHoraireTotalModule) * 100;
+
+    // console.log('data',avancementPourcentPRE)
+    // const masseHoraireReserMod = await Reservation.findAll({
+    //   where: {
+    //     idModule: module.id,
+    //     idGroupe: groupe.id
+    //   }
+    // });
+
+    // const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
+    //   return total + reservation.nombeHeureSeance;
+    // }, 0);
+
+    // const avancementPourcent = ((masseHoraireTotale)/ masseHoraireTotalModule) * 100;
+
+    // const groupeModule = await GroupeModule.findOne({
+    //   where: {
+    //     GroupeId: groupe.id,
+    //     ModuleId: module.id,
+    //   },
+    // });
+
+    // console.log('data2',groupeModule.etat_avancement)
+
+
+    // if (groupeModule) {
+    //   // Mettre à jour l'état d'avancement
+    //   groupeModule.etat_avancement = avancementPourcentPRE;
+    //   await groupeModule.save();
+    // } 
+
+    response.status(200).json({ message: 'Reservation deleted successfully' });
+  } catch (error) {
+    // Log the error and respond with a server error status
+    console.error('Error deleting reservation:', error);
+    response.status(500).json({ error: 'An error occurred while deleting the reservation' });
+  }
+},
 }
 module.exports = emploisController;
 
