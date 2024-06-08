@@ -232,10 +232,14 @@ const emploisController = {
       }
   
       // Calcul de l'état d'avancement total du groupe
-      const reservationsGroupe = await Reservation.findAll({
-        where: { idGroupe: idGroupe }
-      });
-      const modulesAvecReservations = [...new Set(reservationsGroupe.map(reservation => reservation.idModule))];
+
+      const modulesFind=await groupe.getModules();
+      const modulesAvecReservations=modulesFind.map(module=>module.id)
+
+      // const reservationsGroupe = await Reservation.findAll({
+      //   where: { idGroupe: idGroupe }
+      // });
+      // const modulesAvecReservations = [...new Set(reservationsGroupe.map(reservation => reservation.idModule))];
   
       const etatsAvancementModules = await Promise.all(modulesAvecReservations.map(async (moduleId) => {
         const groupeModule = await GroupeModule.findOne({ where: { GroupeId:groupe.id, ModuleId: moduleId } });
@@ -248,8 +252,7 @@ const emploisController = {
   
       const etatFinale = etatsAvancementModules.map(module => module.etatAvancement);
       const etatTotale = etatFinale.reduce((total, etat) => parseInt(total) + parseInt(etat), 0);
-      const modules = await groupe.getModules();
-      const lengthListe = modules.length*100;  
+      const lengthListe = modulesFind.length*100;  
       const etatTotaleAvancementPourCent = (etatTotale / lengthListe) * 100;
       groupe.etat_avancement = Math.round(etatTotaleAvancementPourCent);
       await groupe.save();
@@ -459,12 +462,15 @@ const emploisController = {
         groupeModule.dr += reservationDeleted.nombeHeureSeance;
         await groupeModule.save();
       } 
+
+
        // Calcul de l'état d'avancement total du groupe
-       const reservationsGroupe = await Reservation.findAll({
-        where: { idGroupe: reservationDeleted.idGroupe }
-      });
-      const modulesAvecReservations = [...new Set(reservationsGroupe.map(reservation => reservation.idModule))];
-  
+      //  const reservationsGroupe = await Reservation.findAll({
+      //   where: { idGroupe: reservationDeleted.idGroupe }
+      // });
+
+     const modulesFind=await groupe.getModules();
+     const modulesAvecReservations=modulesFind.map(module=>module.id)
       const etatsAvancementModules = await Promise.all(modulesAvecReservations.map(async (moduleId) => {
         const groupeModule = await GroupeModule.findOne({ where: {GroupeId: reservationDeleted.idGroupe, ModuleId: moduleId } });
         if (groupeModule) {
@@ -476,11 +482,12 @@ const emploisController = {
   
       const etatFinale = etatsAvancementModules.map(module => module.etatAvancement);
       const etatTotale = etatFinale.reduce((total, etat) => parseInt(total) + parseInt(etat), 0);
-      const modules = await groupe.getModules();
-      const lengthListe = modules.length*100;  
+      const lengthListe = modulesFind.length*100;  
       const etatTotaleAvancementPourCent = (etatTotale / lengthListe) * 100;
       groupe.etat_avancement = Math.round(etatTotaleAvancementPourCent);
       await groupe.save();
+
+
       // Respond with a success message
       response.status(200).json({ message: 'Reservation deleted successfully' });
     } catch (error) {
@@ -617,6 +624,245 @@ deleteReservationSeanceupdate: async (request, response) => {
     // Log the error and respond with a server error status
     console.error('Error deleting reservation:', error);
     response.status(500).json({ error: 'An error occurred while deleting the reservation' });
+  }
+},
+
+
+// ***********************************
+// Mise a jour de formateur pour un ereservation
+
+// ***************************************************
+reservationFormateurUpdateSeance:async (request, response) => {
+  try {
+
+    const {idReservation} =request.query
+    if (!idReservation) {
+      return response.status(400).json({ error: 'reservation required' });
+    }
+
+    const {day,idGroupe, startIndex,startEnd}=await Reservation.findByPk(idReservation)
+
+    const reservations = await Reservation.findAll({
+      where: {
+        day: { [Op.eq]: day },
+        [Op.or]: [
+          {
+            startIndex: { [Op.lte]: startIndex },
+            startEnd: { [Op.gt]: startIndex }
+          },
+          {
+            startIndex: { [Op.lt]: startEnd },
+            startEnd: { [Op.gte]: startEnd }
+          },
+          {
+            startIndex: { [Op.gte]: startIndex },
+            startEnd: { [Op.lte]: startEnd }
+          }
+        ]
+      }
+    });
+
+    const groupe = await Groupe.findByPk(idGroupe);
+    const moduleGroupesFInd=await groupe.getModules();
+    const idModuleGroupe=moduleGroupesFInd.map(module=>module.id)
+    const formateursGroupe = await groupe?.getFormateurs();
+  // formateur de groupe
+    const formateursIds= formateursGroupe?  formateursGroupe.map(formateur => formateur.id):[];
+
+    // recuper les formateur de resrvations
+
+    const reservedFormateurMat = reservations 
+    ? reservations.map(reservation => reservation.idFormateur).filter(formateur => formateur !== null)
+    : [];     
+    
+    const modulesId = await GroupeModule.findAll({
+      where: {
+        etat_avancement: {
+          [Op.lt]: 100
+        },
+        GroupeId:{
+             [Op.eq]: groupe.id 
+        }
+      }
+    });
+    const modulesIdFind = modulesId.map(module => module.ModuleId);
+
+    
+    // console.log(reservedFormateurMat)
+    const formateursAvecModules = await Formateur.findAll({
+      where: {
+        [Op.and]: [
+          { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
+          { id: { [Op.in]: formateursIds } }
+        ]
+      },
+      include: [{
+        model: Module,
+        as: "modules",
+        where: {
+          [Op.and]: [
+            { id: { [Op.in]: idModuleGroupe } },
+            { id: { [Op.in]: modulesIdFind } }
+          ]
+        },
+      }]
+    });
+          
+
+  
+    const formateurs = await Promise.all(formateursAvecModules.map(async formateur => {
+      const formateurAvecModules = {
+        id: formateur.id,
+        nom: formateur.nom,
+        prenom: formateur.prenom,
+        modules: await Promise.all(formateur.modules.map(async module => {
+          const groupeModule = await GroupeModule.findOne({
+            where: {
+              ModuleId: module.id,
+              GroupeId: groupe.id
+
+            }
+          });
+          const dr = groupeModule ? groupeModule.dr : null;
+          // obtenir l'état d'avancement pour ce module et ce formateur
+          return {
+            id: module.id,
+            description: module.description,
+            dureeRest:dr // Ajouter l'état d'avancement au module
+          };
+        }))
+      };
+      return formateurAvecModules;
+    }));
+    
+    
+    response.status(200).json({formateurs});
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+},
+reservationFormateurUpdateSeanceValid: async (request, response) => {
+  try {
+    const { idFormateur, idModule, idReservation } = request.body;
+
+    // Vérification des paramètres requis
+    if (!idFormateur || !idModule || !idReservation) {
+      return response.status(400).json({ error: 'Paramètres requis manquants' });
+    }
+
+    // Trouver la réservation par ID
+    const reservationFound = await Reservation.findByPk(idReservation);
+    if (!reservationFound) {
+      return response.status(404).json({ error: 'Réservation non trouvée' });
+    }
+
+    // Mise à jour de la réservation
+    reservationFound.idFormateur = idFormateur;
+    reservationFound.idModule = idModule;
+    await reservationFound.save();
+    
+    // Récupération de toutes les réservations du groupe avec leurs détails
+    const reservations = await Reservation.findAll({
+      where: { idGroupe: reservationFound.idGroupe },
+      include: [
+        { model: Salle, as: "salle", attributes: ['nom'] },
+        { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
+        { model: Module, as: "module", attributes: ['codeModule', 'description'] },
+        { model: Groupe, as: "groupe", attributes: ['code'] }
+      ]
+    });
+
+    response.status(200).json(reservations);
+  } catch (error) {
+    console.error(error);
+    response.status(500).send('Erreur lors de la mise à jour de la réservation');
+  }
+},
+reservationSalleUpdateSeance:async (request, response) => {
+  try {
+
+    const {idReservation} =request.query
+    if (!idReservation) {
+      return response.status(400).json({ error: 'reservation required' });
+    }
+
+    const {day, startIndex,startEnd}=await Reservation.findByPk(idReservation)
+
+    const reservations = await Reservation.findAll({
+      where: {
+        day: { [Op.eq]: day },
+        [Op.or]: [
+          {
+            startIndex: { [Op.lte]: startIndex },
+            startEnd: { [Op.gt]: startIndex }
+          },
+          {
+            startIndex: { [Op.lt]: startEnd },
+            startEnd: { [Op.gte]: startEnd }
+          },
+          {
+            startIndex: { [Op.gte]: startIndex },
+            startEnd: { [Op.lte]: startEnd }
+          }
+        ]
+      }
+    });
+
+   
+    const reservedSalleIds = reservations 
+    ? reservations.map(reservation => reservation.idSalle).filter(salle => salle !== null)
+    : [];  
+    const salles = await Salle.findAll({
+        where: {
+            [Op.and]: [
+                { id: { [Op.notIn]: reservedSalleIds } },
+                { MREST: { [Op.gt]: 0 } }
+            ]
+        }
+    });
+    
+
+    response.status(200).json({salles});
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+},
+reservationSalleUpdateSeanceValid: async (request, response) => {
+  try {
+    const {  idSalle, idReservation } = request.body;
+
+    // Vérification des paramètres requis
+    if (!idSalle) {
+      return response.status(400).json({ error: 'Paramètres requis manquants' });
+    }
+
+    // Trouver la réservation par ID
+    const reservationFound = await Reservation.findByPk(idReservation);
+    if (!reservationFound) {
+      return response.status(404).json({ error: 'Réservation non trouvée' });
+    }
+
+    // Mise à jour de la réservation
+    reservationFound.idSalle = idSalle;
+    await reservationFound.save();
+    
+    // Récupération de toutes les réservations du groupe avec leurs détails
+    const reservations = await Reservation.findAll({
+      where: { idGroupe: reservationFound.idGroupe },
+      include: [
+        { model: Salle, as: "salle", attributes: ['nom'] },
+        { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
+        { model: Module, as: "module", attributes: ['codeModule', 'description'] },
+        { model: Groupe, as: "groupe", attributes: ['code'] }
+      ]
+    });
+
+    response.status(200).json(reservations);
+  } catch (error) {
+    console.error(error);
+    response.status(500).send('Erreur lors de la mise à jour de la réservation');
   }
 },
 }
