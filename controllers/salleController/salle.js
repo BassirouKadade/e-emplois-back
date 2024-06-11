@@ -55,9 +55,7 @@ const salleController = {
   
   supprimer: async (request, response) => {
     try {
-      console.log(request.params.ids);
       const moduleIds = request.params.ids.split('-');
-      console.log(moduleIds);
       await Salle.destroy({
         where: {
           id: moduleIds

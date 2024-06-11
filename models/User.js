@@ -10,7 +10,11 @@ function initialModelUser(sequelize) {
             autoIncrement: true,
             allowNull: false
         },
-        name: {
+        nom: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        prenom: {
             type: DataTypes.STRING,
             allowNull: false
         },

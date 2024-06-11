@@ -9,7 +9,10 @@ const moduleRoute=require('./routes/moduleRoute')
 const salleRoute=require('./routes/salleRoute')
 const filiereRoute=require('./routes/filiereRoute')
 const groupeRoute=require('./routes/groupeRoute')
+const userRoute=require('./routes/userRoute')
 const emploisRoute=require('./routes/emploisRoute')
+const etablissementRoute=require('./routes/etablissementRoute')
+const seedRoles=require('./routes/roles')
 const app = express();
 
 const port = process.env.PORT || 3001;
@@ -29,7 +32,9 @@ app.use('/module',moduleRoute)
 app.use('/salle',salleRoute)
 app.use('/filiere',filiereRoute)
 app.use('/groupe',groupeRoute)
+app.use('/user',userRoute)
 app.use('/emplois',emploisRoute)
+app.use('/etablissement',etablissementRoute)
 app.use('/',authRoute)
 
 // Middleware de gestion d'erreurs
@@ -43,6 +48,7 @@ app.use((err, req, res, next) => {
     await sequelize.authenticate();
     console.log('La connexion à la base de données a réussi');
     await sequelize.sync({ force:false });
+    await seedRoles()
     console.log('Les tables ont été synchronisées');
   } catch (e) {
     console.log('Une erreur est survenue lors d\'une opération');

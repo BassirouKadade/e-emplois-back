@@ -95,7 +95,7 @@ Etablissement.belongsTo(User, {
 });
 User.hasMany(Etablissement, {
   foreignKey: 'id_user',
-  as: 'etablissement',
+  as: 'etablissements',
   onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
 });
 

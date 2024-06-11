@@ -269,7 +269,6 @@ formateurSupprimerGroupeormateur:async (request, response) => {
         errorServer.notExisteFormateur = "Le module n'existe pas";
         return response.status(400).json(errorServer);
     }
-console.log('e^poiuytredffghjlmlkjhgf')
       // Suppose que vous avez une association entre Formateur et Module
       await formateurExiste.removeGroupe(GroupeExiste);
 
