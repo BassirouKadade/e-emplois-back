@@ -1,4 +1,4 @@
-const { Reservation, Salle, Groupe, Formateur, Module, GroupeModule } = require('../../config/sequelize');
+const { Reservation, Salle, Groupe, Formateur, Module, GroupeModule, Filiere } = require('../../config/sequelize');
 const { Op } = require('sequelize');
 
 const emploisController = {
@@ -865,6 +865,173 @@ reservationSalleUpdateSeanceValid: async (request, response) => {
     response.status(500).send('Erreur lors de la mise à jour de la réservation');
   }
 },
+
+// ******************************************************
+//    Gestion des emplois prime pour le PDF
+
+getEmploisPrime: async (request, response) => {
+  try {
+    const { idGroupe } = request.query;
+    if (!idGroupe) {
+      return response.status(400).json({ error: 'idGroupe is required' });
+    }
+
+    const groupe = await Groupe.findByPk(idGroupe, {
+      include: [{
+        model: Filiere,
+        as: 'filiere'
+      }]
+    });
+    if (!groupe) {
+      return response.status(404).json({ error: 'Groupe not found' });
+    }
+
+    const reservations = await Reservation.findAll({
+      where: {
+        idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'idGroupe'
+
+      },
+        include: [
+            { model: Salle, as:"salle", attributes: ['nom'] },
+            { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+            { model: Module,as:"module", attributes: ['codeModule','description'] },
+            { model: Groupe, as:"groupe",attributes: ['code'] }
+        ]
+    });
+
+    const reservationMasse=reservations.map(reservation=> reservation.nombeHeureSeance)
+    const totalHeures = reservationMasse.reduce((total, reservation) => {
+      return total + reservation;
+    }, 0);
+
+    const dataHeader = {
+      filiere: groupe?.filiere.code,
+      niveau: groupe?.filiere.niveau,
+      groupe: groupe?.code,
+      masseHoraire: totalHeures
+    };
+
+    // Vous pouvez également inclure d'autres informations dans la réponse si nécessaire
+    response.status(200).json({ dataHeader, reservations });
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois getEmploi:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+},
+getEmploisSallePrime:async (request, response) => {
+  try {
+    const { idSalle } = request.query;
+    if (!idSalle) {
+      return response.status(400).json({ error: 'idSalle is required' });
+    }
+
+    const salle = await Salle.findByPk(idSalle);
+    if (!salle) {
+      return response.status(404).json({ error: 'salle not found' });
+    }
+    const reservations = await Reservation.findAll({
+      where: {
+        idSalle: { [Op.eq]: salle?.id } // Assuming 'groupe' refers to 'idGroupe'
+      },
+      include: [
+        { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+        { model: Module,as:"module", attributes: ['codeModule','description'] },
+        { model: Groupe, as:"groupe",attributes: ['code'] },
+        { model: Salle, as:"salle", attributes: ['nom'] },
+    ]
+    });
+    const reservationMasse=reservations.map(reservation=> reservation.nombeHeureSeance)
+    const totalHeures = reservationMasse.reduce((total, reservation) => {
+      return total + reservation;
+    }, 0);
+
+    const dataHeader = {
+      salle: salle?.nom,
+      capacite: salle?.capacite,
+      masseHoraireSalle:salle?.MH,
+      masseHoraireOcuppe: totalHeures,
+    }
+
+    response.status(200).json({ dataHeader, reservations });
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+}, 
+getEmploisFormateurCentrePrime:async (request, response) => {
+  try {
+    const { idFormateur } = request.query;
+    if (!idFormateur) {
+      return response.status(400).json({ error: 'idFormateur is required' });
+    }
+
+    const FormateurFind = await Formateur.findByPk(idFormateur);
+    if (!FormateurFind) {
+      return response.status(404).json({ error: 'Formateur not found' });
+    }
+    const reservations = await Reservation.findAll({
+      where: {
+        idFormateur: { [Op.eq]: FormateurFind?.id } // Assuming 'groupe' refers to 'idGroupe'
+      },
+      include: [
+        { model: Formateur,as:"formateur", attributes: ['matricule', 'nom', 'prenom'] },
+        { model: Module,as:"module", attributes: ['codeModule','description'] },
+        { model: Groupe, as:"groupe",attributes: ['code'] },
+        { model: Salle, as:"salle", attributes: ['nom'] },
+    ]
+    });
+
+    const dataHeader = {
+      matricule: FormateurFind?.matricule,
+      nom: FormateurFind?.nom,
+      prenom: FormateurFind?.prenom,
+    }
+
+    response.status(200).json({ dataHeader, reservations });
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois:', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+},
+  getEmploisAllOFDatabase: async (request, response) => {
+    try {
+      // Recherche de toutes les réservations avec toutes les associations et tous les attributs
+      const reservations = await Reservation.findAll({
+        include: [
+          {
+            model: Formateur,
+            as: "formateur"
+          },
+          {
+            model: Module,
+            as: "module"
+          },
+          {
+            model: Groupe,
+            as: "groupe",
+            include: [
+              {
+                model: Filiere,
+                as: "filiere"
+              }
+            ]
+          },
+          {
+            model: Salle,
+            as: "salle"
+          }
+        ]
+      });
+
+      // Réponse en cas de succès
+      response.status(200).json(reservations);
+    } catch (error) {
+      // Log de l'erreur pour le débogage
+      console.error('Erreur lors de la récupération des emplois:', error);
+      // Réponse en cas d'erreur
+      response.status(500).send('Erreur lors de la récupération des emplois');
+    }
+  }
 }
 module.exports = emploisController;
 

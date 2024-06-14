@@ -7,6 +7,10 @@ const {getEmplois, creerEmplois,getEmploisDay,
     reservationFormateurUpdateSeanceValid,
     reservationSalleUpdateSeance,
     reservationSalleUpdateSeanceValid,
+    getEmploisPrime,
+    getEmploisFormateurCentrePrime,
+    getEmploisSallePrime,
+    getEmploisAllOFDatabase,
     getTotaleMasseHoraire,getEmploisFormateurCentre,verificationEmplois} = require('../controllers/emploisController/emploisController');
 
 emploisRoute.post('/verification-disponibilite-emplois', verificationEmplois);
@@ -23,5 +27,13 @@ emploisRoute.get('/reservation-formateur-update-seance', reservationFormateurUpd
 emploisRoute.post('/reservation-formateur-update-seance-valid', reservationFormateurUpdateSeanceValid);
 emploisRoute.get('/reservation-salle-update-seance', reservationSalleUpdateSeance);
 emploisRoute.post('/reservation-salle-update-seance-valid', reservationSalleUpdateSeanceValid);
+
+emploisRoute.get('/get-emplois-of-database',getEmploisAllOFDatabase);
+
+
+emploisRoute.get('/get-emplois-groupe-prime', getEmploisPrime);
+emploisRoute.get('/get-emplois-salle-prime', getEmploisSallePrime);
+emploisRoute.get('/get-emplois-formateur-prime', getEmploisFormateurCentrePrime);
+
 
 module.exports=emploisRoute
