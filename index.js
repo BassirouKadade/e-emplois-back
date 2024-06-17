@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {  sequelize } = require('./config/sequelize');
 const formateurRoute=require('./routes/formateurRoute')
+const verifyToken=require('./middleware/verifyToken')
 const cors=require('cors')
 const authRoute=require('./routes/authRoute')
 const moduleRoute=require('./routes/moduleRoute')
@@ -27,15 +28,15 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/formateur',formateurRoute)
-app.use('/module',moduleRoute)
-app.use('/salle',salleRoute)
-app.use('/filiere',filiereRoute)
-app.use('/groupe',groupeRoute)
-app.use('/user',userRoute)
-app.use('/emplois',emploisRoute)
-app.use('/etablissement',etablissementRoute)
-app.use('/',authRoute)
+app.use('/formateur',verifyToken,formateurRoute)
+app.use('/module',verifyToken, moduleRoute)
+app.use('/salle',verifyToken,salleRoute)
+app.use('/filiere',verifyToken,filiereRoute)
+app.use('/groupe',verifyToken,groupeRoute)
+app.use('/user',verifyToken,userRoute)
+app.use('/emplois',verifyToken, emploisRoute)
+app.use('/etablissement',verifyToken,etablissementRoute)
+app.use('/auth',authRoute)
 
 // Middleware de gestion d'erreurs
 app.use((err, req, res, next) => {
