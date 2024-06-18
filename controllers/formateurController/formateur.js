@@ -3,9 +3,13 @@ const { Op } = require('sequelize');
 
 const formateurController = {
   ajouter: async (request, response) => {
+
     try {
+      [idEtablissement]=request.user,idEtablissement
+
       const { nom, prenom, metier, email, matricule } = request.body;
       
+      console.log(idEtablissement)
       const errorServer = {};
 
       if (!nom || !prenom || !metier || !email || !matricule) {

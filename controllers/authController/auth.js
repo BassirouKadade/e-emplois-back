@@ -39,7 +39,7 @@ const auth = {
             const token = jwt.sign(
                 { id: existUser.id, idEtablissement: etablissementsId, roles: role },
                 process.env.JWT_SECRET,
-                { expiresIn: "5s" } // Example: token expires in 1 hour
+                { expiresIn: "10m" } // Example: token expires in 1 hour
             );
 
             return response.status(200).json(token );
