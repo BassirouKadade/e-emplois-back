@@ -5,7 +5,8 @@ const moduleController = {
   ajouter: async (request, response) => {
     try {
       let { codeModule, description, masseHoraire, MHP, MHD } = request.body;
-      console.log(request.body)
+      [idEtablissement]=request.user.idEtablissement
+
       codeModule = codeModule.trim();
       description = description.trim();
       const errorServer = {};
@@ -15,21 +16,22 @@ const moduleController = {
         return response.status(400).json(errorServer);
       }
 
-      const moduleExist = await Module.findOne({ where: { description } });
+      const moduleExist = await Module.findOne(
+        { where: { description,id_etablissement:idEtablissement } });
 
       if (moduleExist) {
         errorServer.existeDescription = "cette description existe déjà";
         return response.status(400).json(errorServer);
       }
 
-      const moduleFind = await Module.findOne({ where: { codeModule } });
+      const moduleFind = await Module.findOne({ where: { codeModule ,id_etablissement:idEtablissement } });
       if (moduleFind) {
         errorServer.existeCode = "Ce code existe déjà";
         return response.status(400).json(errorServer);
       }
   
 
-      const module = { codeModule, description, masseHoraire, MHP, MHD };
+      const module = {id_etablissement:idEtablissement, codeModule, description, masseHoraire, MHP, MHD };
       await Module.create(module);
       response.status(201).json({ success: "Module ajouté avec succès" });
     } catch (error) {
@@ -40,10 +42,16 @@ const moduleController = {
 
   liste: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const page = parseInt(request.query.page) || 1;
       const limit = 6; // Nombre d'éléments par page
       const offset = (page - 1) * limit; // Calcul de l'offset
       const { count, rows } = await Module.findAndCountAll({
+      where:{
+        id_etablissement:idEtablissement
+      }
+      },{
         limit,
         offset,
       });
@@ -82,7 +90,8 @@ const moduleController = {
   update: async (request, response) => {
     try {
       const {id, codeModule, description, masseHoraire, MHP, MHD } = request.body;
-      
+      [idEtablissement]=request.user.idEtablissement
+
       const errorServer = {};
 
       // Vérifier si tous les champs requis sont fournis
@@ -93,19 +102,19 @@ const moduleController = {
 
      
       // Mettre à jour les informations du module
-      const module = await Module.findOne({ where: { id } });
+      const module = await Module.findOne({ where: { id , id_etablissement:idEtablissement} });
       if (!module) {
         return response.status(404).json({ error: "Module non trouvé" });
       }
 
-      const moduleFind = await Module.findOne({ where: { codeModule } });
+      const moduleFind = await Module.findOne({ where: { codeModule , id_etablissement:idEtablissement} });
       if (moduleFind && moduleFind.id !== id) {
         errorServer.existeCode = "Ce code existe déjà";
         return response.status(400).json(errorServer);
       }
   
 
-      const moduleFindDescription = await Module.findOne({ where: { description } });
+      const moduleFindDescription = await Module.findOne({ where: { description , id_etablissement:idEtablissement} });
       if (moduleFindDescription && moduleFindDescription.id !== id) {
         errorServer.existeDescription = "Cette description existe déjà";
         return response.status(400).json(errorServer);
@@ -126,14 +135,13 @@ const moduleController = {
     try {
       const { search, page } = request.query;
       let pageNumber = 1; // Par défaut, définir la page sur 1
+      [idEtablissement]=request.user.idEtablissement
 
       if (page && !isNaN(parseInt(page))) {
         // Vérifier si page est défini et qu'il peut être converti en un nombre
         pageNumber = parseInt(page);
       }
-      
-      console.log("search pages", pageNumber);
-      
+            
       if (!search) {
         return response.status(400).json({ message: 'Search term is required' });
       }
@@ -149,7 +157,11 @@ const moduleController = {
     
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
-      const { count, rows } = await Module.findAndCountAll({
+      const { count, rows } = await Module.findAndCountAll(
+        {
+          id_etablissement:idEtablissement
+        },
+        {
         limit,
         offset,
         where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
@@ -171,7 +183,8 @@ allModules: async (request, response) => {
   try {
       const { formateur } = request.query;
       const formateurExist = await Formateur.findByPk(formateur);
-      
+      [idEtablissement]=request.user.idEtablissement
+
       if (!formateurExist) {
           return response.status(404).json({ error: "Formateur non trouvé" });
       }
@@ -183,7 +196,8 @@ allModules: async (request, response) => {
           where: {
               id: {
                   [Op.notIn]: listeIdModuleFormateur
-              }
+              },
+              id_etablissement:idEtablissement
           }
       });
 

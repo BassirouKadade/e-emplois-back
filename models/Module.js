@@ -30,6 +30,15 @@ function initialModelModule(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true
         },
+        id_etablissement: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "etablissements",
+                key: "id",
+            },
+            onDelete: "CASCADE"
+        }
        
     }, {
         sequelize,

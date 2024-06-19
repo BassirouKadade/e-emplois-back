@@ -5,7 +5,8 @@ const filiereController = {
   ajouter: async (request, response) => {
     try {
       const { code, niveau, description } = request.body;
-      
+      [idEtablissement]=request.user.idEtablissement
+
       const errorServer = {};
 
       if (!code || !niveau || !description) {
@@ -13,9 +14,9 @@ const filiereController = {
         return response.status(400).json(errorServer);
       }
 
-      const filiereExist = await Filiere.findOne({ where: { code } });
+      const filiereExist = await Filiere.findOne({ where: { code,id_etablissement:idEtablissement } });
 
-      const filiereExistDescrip = await Filiere.findOne({ where: { description } });
+      const filiereExistDescrip = await Filiere.findOne({ where: { description,id_etablissement:idEtablissement  } });
 
       if (filiereExist) {
         errorServer.existCode = "ce code existe déjà";
@@ -26,7 +27,7 @@ const filiereController = {
         return response.status(400).json(errorServer);
       }
 
-      const filiere = { code, niveau, description };
+      const filiere = {id_etablissement:idEtablissement,  code, niveau, description };
       await Filiere.create(filiere);
       response.status(201).json({ success: "Filiere ajoutée avec succès" });
     } catch (error) {
@@ -37,10 +38,18 @@ const filiereController = {
 
   liste: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const page = parseInt(request.query.page) || 1;
       const limit = 6; // Nombre d'éléments par page
       const offset = (page - 1) * limit; // Calcul de l'offset
-      const { count, rows } = await Filiere.findAndCountAll({
+      const { count, rows } = await Filiere.findAndCountAll(
+        {
+          where:{
+             id_etablissement:idEtablissement
+          }
+        }
+        ,{
         limit,
         offset,
       });
@@ -76,6 +85,8 @@ const filiereController = {
 
   update: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const { id, code, niveau, description } = request.body;
       
       const errorServer = {};
@@ -85,12 +96,12 @@ const filiereController = {
         return response.status(400).json(errorServer);
       }
 
-      const filiereExistCode = await Filiere.findOne({ where: { code } });
+      const filiereExistCode = await Filiere.findOne({ where: { code ,id_etablissement:idEtablissement} });
       if (filiereExistCode && filiereExistCode.id !== id) {
         errorServer.existCode = "Ce code existe déjà";
         return response.status(400).json(errorServer);
       }
-      const filiereExistDescription = await Filiere.findOne({ where: { description } });
+      const filiereExistDescription = await Filiere.findOne({ where: { description ,id_etablissement:idEtablissement} });
       if (filiereExistDescription && filiereExistDescription.id !== id) {
         errorServer.existDescription = "Cette description existe déjà";
         return response.status(400).json(errorServer);
@@ -111,6 +122,8 @@ const filiereController = {
 
   searchNext: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const { search, page } = request.query;
       let pageNumber = 1; // Par défaut, définir la page sur 1
 
@@ -133,7 +146,12 @@ const filiereController = {
       const limit = 6; // Nombre d'éléments par page
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
-      const { count, rows } = await Filiere.findAndCountAll({
+      const { count, rows } = await Filiere.findAndCountAll(
+        {
+          where:{
+             id_etablissement:idEtablissement
+          }
+        },{
         limit,
         offset,
         where: searchOptions,
@@ -154,7 +172,13 @@ const filiereController = {
   
 listeFiliereAll:async (request, response) => {
   try {
-    const filieres= await Filiere.findAll()
+    [idEtablissement]=request.user.idEtablissement
+
+    const filieres= await Filiere.findAll({
+      where:{
+         id_etablissement:idEtablissement
+      }
+    })
     response.status(200).json(filieres);
   } catch (error) {
     console.error(error);

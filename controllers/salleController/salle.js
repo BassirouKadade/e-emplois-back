@@ -6,6 +6,8 @@ const salleController = {
     try {
       let { MREST,MH,nom, capacite, emplacement } = request.body;
       nom = nom.trim();
+      [idEtablissement]=request.user.idEtablissement
+
       emplacement = emplacement.trim();
       const errorServer = {};
 
@@ -14,14 +16,14 @@ const salleController = {
         return response.status(400).json(errorServer);
       }
 
-      const salleExist = await Salle.findOne({ where: { nom } });
+      const salleExist = await Salle.findOne({ where: { nom,id_etablissement:idEtablissement  } });
 
       if (salleExist) {
         errorServer.existeNom = "Ce nom de salle existe déjà";
         return response.status(400).json(errorServer);
       }
 
-      const salle = { nom, MREST,MH,capacite, emplacement };
+      const salle = { nom, MREST,MH,capacite,id_etablissement:idEtablissement, emplacement };
       await Salle.create(salle);
       response.status(201).json({ success: "Salle ajoutée avec succès" });
     } catch (error) {
@@ -33,9 +35,15 @@ const salleController = {
   liste: async (request, response) => {
     try {
       const page = parseInt(request.query.page) || 1;
+      [idEtablissement]=request.user.idEtablissement
+
       const limit = 6; // Nombre d'éléments par page
       const offset = (page - 1) * limit; // Calcul de l'offset
       const { count, rows } = await Salle.findAndCountAll({
+         where:{
+          id_etablissement:idEtablissement
+         }
+      },{
         limit,
         offset,
       });
@@ -85,7 +93,7 @@ const salleController = {
         return response.status(404).json({ error: "Salle non trouvée" });
       }
 
-      const salleExist = await Salle.findOne({ where: { nom } });
+      const salleExist = await Salle.findOne({ where: { nom ,id_etablissement:idEtablissement } });
       if (salleExist && salleExist.id !== id) {
         errorServer.existeNom = "Ce nom de salle existe déjà";
         return response.status(400).json(errorServer);
@@ -103,6 +111,8 @@ const salleController = {
   searchNext: async (request, response) => {
     try {
       const { search, page } = request.query;
+      [idEtablissement]=request.user.idEtablissement
+
       let pageNumber = 1; // Par défaut, définir la page sur 1
 
       if (page && !isNaN(parseInt(page))) {
@@ -125,7 +135,13 @@ const salleController = {
     
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
-      const { count, rows } = await Salle.findAndCountAll({
+      const { count, rows } = await Salle.findAndCountAll(
+        {
+           where:{
+            id_etablissement: idEtablissement
+           }
+        },
+        {
         limit,
         offset,
         where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
@@ -145,7 +161,11 @@ const salleController = {
   getAllSalleDatabase:async (request, response) => {
     try {
      
-     const salles= await Salle.findAll()
+     const salles= await Salle.findAll(  {
+      where:{
+       id_etablissement: idEtablissement
+      }
+   },)
       response.status(200).json(salles);
     } catch (error) {
       console.error(error);

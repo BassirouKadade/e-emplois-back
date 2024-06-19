@@ -4,6 +4,8 @@ const { Op } = require('sequelize');
 const groupeController = {
   ajouter: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       let { code, description, id_filiere } = request.body;
       code = code.trim();
       description = description.trim();
@@ -14,14 +16,14 @@ const groupeController = {
         return response.status(400).json(errorServer);
       }
 
-      const groupeExist = await Groupe.findOne({ where: { code } });
+      const groupeExist = await Groupe.findOne({ where: { code ,id_etablissement:idEtablissement} });
 
       if (groupeExist) {
         errorServer.existeCode = "Ce code de groupe existe déjà";
         return response.status(400).json(errorServer);
       }
 
-      const groupe = { code, description, id_filiere };
+      const groupe = {id_etablissement:idEtablissement, code, description, id_filiere };
       await Groupe.create(groupe);
       response.status(201).json({ success: "Groupe ajouté avec succès" });
     } catch (error) {
@@ -35,8 +37,16 @@ const groupeController = {
         const page = parseInt(request.query.page, 10) || 1;
         const limit = 6; // Nombre d'éléments par page
         const offset = (page - 1) * limit; // Calcul de l'offset
+        [idEtablissement]=request.user.idEtablissement
 
-        const { count, rows } = await Groupe.findAndCountAll({
+        const { count, rows } = await Groupe.findAndCountAll(
+          {
+            where:{
+              id_etablissement:idEtablissement
+
+            }
+          },
+          {
             limit,
             offset,
             include: [
@@ -50,6 +60,7 @@ const groupeController = {
 
         const totalPages = Math.ceil(count / limit); // Nombre total de pages
 
+        console.log('rmùlkjhgfhj---------------',rows)
         response.status(200).json({
             totalPages,
             currentPage: page,
@@ -81,7 +92,8 @@ const groupeController = {
   update: async (request, response) => {
     try {
       const { id, code, description, id_filiere } = request.body;
-      
+      [idEtablissement]=request.user.idEtablissement
+
       const errorServer = {};
 
       if (!code || !id_filiere) {
@@ -94,7 +106,7 @@ const groupeController = {
         return response.status(404).json({ error: "Groupe non trouvé" });
       }
 
-      const groupeExist = await Groupe.findOne({ where: { code } });
+      const groupeExist = await Groupe.findOne({ where: { code,id_etablissement:idEtablissement } });
       if (groupeExist && groupeExist.id !== id) {
         errorServer.existeCode = "Ce code de groupe existe déjà";
         return response.status(400).json(errorServer);
@@ -111,6 +123,8 @@ const groupeController = {
     
   searchNext: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const { search, page } = request.query;
       let pageNumber = 1; // Par défaut, définir la page sur 1
 
@@ -134,7 +148,13 @@ const groupeController = {
     
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
-      const { count, rows } = await Groupe.findAndCountAll({
+      const { count, rows } = await Groupe.findAndCountAll(
+        {
+          where:{
+             id_etablissement:idEtablissement
+          }
+        }
+          ,{
         limit,
         offset,
         where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
@@ -153,7 +173,13 @@ const groupeController = {
   },
   getGroupeTotale:async (request, response) => {
     try {
-      const groupes=await Groupe.findAll()
+      [idEtablissement]=request.user.idEtablissement
+
+      const groupes=await Groupe.findAll({
+        where:{
+           id_etablissement:idEtablissement
+        }
+      })
       response.status(200).json(groupes);
     } catch (error) {
       console.error(error);
@@ -181,6 +207,8 @@ const groupeController = {
   },
   allModulesGroupe: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
         const { groupe } = request.query;
         const groupeExist = await Groupe.findByPk(groupe);
         
@@ -191,11 +219,13 @@ const groupeController = {
         const modulesGroupe = await groupeExist.getModules();
         const listeIdModuleGroupe = modulesGroupe.map((module) => module.id);
   
-        const modules = await Module.findAll({
+        const modules = await Module.findAll(
+          {
             where: {
                 id: {
                     [Op.notIn]: listeIdModuleGroupe
-                }
+                },
+                id_etablissement:idEtablissement
             }
         });
   

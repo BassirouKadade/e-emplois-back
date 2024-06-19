@@ -14,6 +14,8 @@ const userRoute=require('./routes/userRoute')
 const emploisRoute=require('./routes/emploisRoute')
 const etablissementRoute=require('./routes/etablissementRoute')
 const seedRoles=require('./routes/roles')
+const seedUsers=require('./routes/users')
+
 const app = express();
 
 const port = process.env.PORT || 3001;
@@ -50,6 +52,7 @@ app.use((err, req, res, next) => {
     console.log('La connexion à la base de données a réussi');
     await sequelize.sync({ force:false });
     await seedRoles()
+    await seedUsers()
     console.log('Les tables ont été synchronisées');
   } catch (e) {
     console.log('Une erreur est survenue lors d\'une opération');

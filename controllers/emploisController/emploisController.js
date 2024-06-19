@@ -1,9 +1,11 @@
-const { Reservation, Salle, Groupe, Formateur, Module, GroupeModule, Filiere } = require('../../config/sequelize');
+const { Reservation,User, Etablissement,Salle, Groupe, Formateur, Module, GroupeModule, Filiere } = require('../../config/sequelize');
 const { Op } = require('sequelize');
 
 const emploisController = {
   verificationEmplois: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const { day,idGroupe, start, end } = request.body;
 
       if (start<0 || !day || end<0) {
@@ -11,6 +13,7 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement,
           day: { [Op.eq]: day },
           [Op.or]: [
             {
@@ -59,6 +62,9 @@ const emploisController = {
       const formateursAvecModules = await Formateur.findAll({
         where: {
           [Op.and]: [
+            {
+              id_etablissement:idEtablissement
+            },
             { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
             { id: { [Op.in]: formateursIds } }
           ]
@@ -113,6 +119,9 @@ const emploisController = {
       const salles = await Salle.findAll({
           where: {
               [Op.and]: [
+                {
+                  id_etablissement:idEtablissement
+                },
                   { id: { [Op.notIn]: reservedSalleIds } },
                   { MREST: { [Op.gt]: 0 } }
               ]
@@ -140,7 +149,8 @@ const emploisController = {
         idFormateur,
         idModule
       } = request.body;
-  
+      [idEtablissement]=request.user.idEtablissement
+
       // Vérification des paramètres requis
       if (
         startIndex === undefined || startIndex < 0 ||
@@ -177,7 +187,7 @@ const emploisController = {
 
       // ************************************
       const masseHoraireReserModPre = await Reservation.findAll({
-        where: { idModule: module.id,idGroupe: groupe.id }
+        where: { id_etablissement:idEtablissement, idModule: module.id,idGroupe: groupe.id }
       });
   
       const masseHoraireTotalePre = masseHoraireReserModPre.reduce((total, reservation) => {
@@ -198,12 +208,13 @@ const emploisController = {
         startTop: top,
         idFormateur: formateur.id,
         idModule: module.id,
-        nombeHeureSeance: resultNombre
+        nombeHeureSeance: resultNombre,
+        id_etablissement:idEtablissement
       });
   
       // Mise à jour de l'état d'avancement du groupe module
       const masseHoraireReserMod = await Reservation.findAll({
-        where: { idModule: module.id,idGroupe: groupe.id }
+        where: {id_etablissement:idEtablissement, idModule: module.id,idGroupe: groupe.id }
       });
   
       const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
@@ -260,7 +271,8 @@ const emploisController = {
   
       // Récupération de toutes les réservations du groupe avec leurs détails
       const reservations = await Reservation.findAll({
-        where: { idGroupe: groupe.id },
+        where: { 
+         id_etablissement:idEtablissement, idGroupe: groupe.id },
         include: [
           { model: Salle, as: "salle", attributes: ['nom'] },
           { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
@@ -281,6 +293,8 @@ const emploisController = {
       if (!idGroupe) {
         return response.status(400).json({ error: 'idGroupe is required' });
       }
+      [idEtablissement]=request.user.idEtablissement
+
   
       const groupe = await Groupe.findByPk(idGroupe);
       if (!groupe) {
@@ -288,6 +302,8 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement
+           ,
           idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'idGroupe'
 
         },
@@ -310,7 +326,8 @@ const emploisController = {
       if (!idGroupe) {
         return response.status(400).json({ error: 'idGroupe is required' });
       }
-  
+      [idEtablissement]=request.user.idEtablissement
+
       const groupe = await Groupe.findByPk(idGroupe);
       if (!groupe) {
         return response.status(404).json({ error: 'Groupe not found' });
@@ -318,6 +335,7 @@ const emploisController = {
   
       const reservations = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement,
           idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'code' field in the Reservation model
         },
         attributes: ['nombeHeureSeance'] // Only select the 'nombeHeureSeance' field
@@ -340,13 +358,15 @@ const emploisController = {
       if (!idSalle) {
         return response.status(400).json({ error: 'idSalle is required' });
       }
-  
+      [idEtablissement]=request.user.idEtablissement
+
       const salle = await Salle.findByPk(idSalle);
       if (!salle) {
         return response.status(404).json({ error: 'salle not found' });
       }
       const reservations = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement,
           idSalle: { [Op.eq]: salle?.id } // Assuming 'groupe' refers to 'idGroupe'
         },
         include: [
@@ -368,6 +388,8 @@ const emploisController = {
       if (!idFormateur) {
         return response.status(400).json({ error: 'idFormateur is required' });
       }
+      [idEtablissement]=request.user.idEtablissement
+
   
       const FormateurFind = await Formateur.findByPk(idFormateur);
       if (!FormateurFind) {
@@ -375,6 +397,7 @@ const emploisController = {
       }
       const reservations = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement,
           idFormateur: { [Op.eq]: FormateurFind?.id } // Assuming 'groupe' refers to 'idGroupe'
         },
         include: [
@@ -394,7 +417,8 @@ const emploisController = {
   deleteReservationSeance: async (request, response) => {
     try {
       const { idReservation } = request.query;
-  
+      [idEtablissement]=request.user.idEtablissement
+
       // Check if the idReservation parameter is provided
       if (!idReservation) {
         return response.status(400).json({ error: 'idReservation is required' });
@@ -440,6 +464,7 @@ const emploisController = {
 
       const masseHoraireReserMod = await Reservation.findAll({
         where: {
+          id_etablissement:idEtablissement,
           idModule: module.id,
           idGroupe: groupe.id
         }
@@ -506,21 +531,45 @@ const emploisController = {
       response.status(500).json({ error: 'An error occurred while deleting the reservation' });
     }
 },
-getTotalGroupeSalleFormateur : async (request, response) => {
+getTotalGroupeSalleFormateur: async (request, response) => {
   try {
-    // Récupération de tous les formateurs, groupes et salles de la base de données
-    const FormateurFindAll = await Formateur.findAll();
-    const GroupeFindAll = await Groupe.findAll();
-    const SalleFindAll = await Salle.findAll();
+    const [idEtablissement] = request.user.idEtablissement;
 
-    // Calcul du nombre total de formateurs, groupes et salles
-    const totalFormateurs = FormateurFindAll.length;
-    const totalGroupes = GroupeFindAll.length;
-    const totalSalles = SalleFindAll.length;
+    // Récupération du nombre total de formateurs, groupes et salles pour l'établissement spécifié
+    const totalFormateurs = await Formateur.count({
+      where: {
+        id_etablissement: idEtablissement
+      }
+    });
 
-    // Calcul de l'état global des groupes (exemple : moyenne des états des groupes)
-    // Dans cet exemple, je vais supposer que chaque groupe a un état (par exemple, une propriété `etat`)
-    const etatTotalGroupes = GroupeFindAll.reduce((total, groupe) => total +  parseFloat(groupe.etat_avancement), 0);
+    const totalGroupes = await Groupe.count({
+      where: {
+        id_etablissement: idEtablissement
+      }
+    });
+
+    const totalSalles = await Salle.count({
+      where: {
+        id_etablissement: idEtablissement
+      }
+    });
+
+    // Calcul de l'état global des groupes (moyenne des états des groupes)
+    // Supposons que chaque groupe a une propriété `etat_avancement`
+    const groupesAvecEtat = await Groupe.findAll({
+      where: {
+        id_etablissement: idEtablissement
+      }
+    });
+   
+    const user=await User.findByPk(request.user.id)
+    const etablissement=await Etablissement.findOne({
+        where:{
+            id_user:user.id
+        }
+    })
+
+    const etatTotalGroupes = groupesAvecEtat.reduce((total, groupe) => total + parseFloat(groupe.etat_avancement), 0);
     const etatGlobal = Math.round(totalGroupes > 0 ? etatTotalGroupes / totalGroupes : 0);
 
     // Retourner les résultats sous forme de JSON
@@ -528,14 +577,17 @@ getTotalGroupeSalleFormateur : async (request, response) => {
       formateurs: totalFormateurs,
       salles: totalSalles,
       groupes: totalGroupes,
-      etat: etatGlobal
+      etat: etatGlobal,
+      user:user,
+      etablissement:etablissement
     });
 
   } catch (error) {
-    console.error('Erreur lors de la vérification des emplois:', error);
-    response.status(500).send('Erreur lors de la vérification des emplois');
+    console.error('Erreur lors de la récupération des données:', error);
+    response.status(500).send('Erreur lors de la récupération des données');
   }
 },
+
 getEmploisDay:async (request, response) => {
   try {
     const { day } = request.query;
@@ -543,8 +595,11 @@ getEmploisDay:async (request, response) => {
       return response.status(400).json({ error: 'Le paramètre day est requis' });
     }
 
+    const [idEtablissement] = request.user.idEtablissement;
+
     const emploisDayFind = await Reservation.findAll({
       where: {
+        id_etablissement:idEtablissement,
         day: {
           [Op.eq]: day
         }
@@ -654,6 +709,7 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
     const { idReservation } = request.query;
 
 
+    const [idEtablissement] = request.user.idEtablissement;
 
 
     // Check if the idReservation parameter is provided
@@ -717,7 +773,7 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
 
     // Calculate previous module progress
     const masseHoraireReserModPre = await Reservation.findAll({
-      where: { idModule: module.id, idGroupe: groupe.id }
+      where: {id_etablissement:idEtablissement, idModule: module.id, idGroupe: groupe.id }
     });
 
     const masseHoraireTotalePre = masseHoraireReserModPre.reduce((total, reservation) => {
@@ -737,12 +793,13 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
       startTop: reservationDeleted.startTop,
       idFormateur: reservationDeleted.idFormateur,
       idModule: reservationDeleted.idModule,
-      nombeHeureSeance: reservationDeleted.nombeHeureSeance
+      nombeHeureSeance: reservationDeleted.nombeHeureSeance,
+      id_etablissement:idEtablissement,
     });
 
     // Update module progress
     const masseHoraireReserMod = await Reservation.findAll({
-      where: { idModule: module.id, idGroupe: groupe.id }
+      where: { id_etablissement:idEtablissement,idModule: module.id, idGroupe: groupe.id }
     });
 
     const masseHoraireTotale = masseHoraireReserMod.reduce((total, reservation) => {
@@ -802,6 +859,7 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
 // ***************************************************
 reservationFormateurUpdateSeance:async (request, response) => {
   try {
+    const [idEtablissement] = request.user.idEtablissement;
 
     const {idReservation} =request.query
     if (!idReservation) {
@@ -812,6 +870,7 @@ reservationFormateurUpdateSeance:async (request, response) => {
 
     const reservations = await Reservation.findAll({
       where: {
+        id_etablissement:idEtablissement,
         day: { [Op.eq]: day },
         [Op.or]: [
           {
@@ -860,6 +919,9 @@ reservationFormateurUpdateSeance:async (request, response) => {
     const formateursAvecModules = await Formateur.findAll({
       where: {
         [Op.and]: [
+          {
+            id_etablissement:idEtablissement
+          },
           { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
           { id: { [Op.in]: formateursIds } }
         ]
@@ -913,6 +975,7 @@ reservationFormateurUpdateSeance:async (request, response) => {
 reservationFormateurUpdateSeanceValid: async (request, response) => {
   try {
     const { idFormateur, idModule, idReservation } = request.body;
+    const [idEtablissement] = request.user.idEtablissement;
 
     // Vérification des paramètres requis
     if (!idFormateur || !idModule || !idReservation) {
@@ -932,7 +995,7 @@ reservationFormateurUpdateSeanceValid: async (request, response) => {
     
     // Récupération de toutes les réservations du groupe avec leurs détails
     const reservations = await Reservation.findAll({
-      where: { idGroupe: reservationFound.idGroupe },
+      where: {id_etablissement:idEtablissement , idGroupe: reservationFound.idGroupe },
       include: [
         { model: Salle, as: "salle", attributes: ['nom'] },
         { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
@@ -949,6 +1012,7 @@ reservationFormateurUpdateSeanceValid: async (request, response) => {
 },
 reservationSalleUpdateSeance:async (request, response) => {
   try {
+    const [idEtablissement] = request.user.idEtablissement;
 
     const {idReservation} =request.query
     if (!idReservation) {
@@ -959,6 +1023,7 @@ reservationSalleUpdateSeance:async (request, response) => {
 
     const reservations = await Reservation.findAll({
       where: {
+        id_etablissement:idEtablissement,
         day: { [Op.eq]: day },
         [Op.or]: [
           {
@@ -984,6 +1049,7 @@ reservationSalleUpdateSeance:async (request, response) => {
     const salles = await Salle.findAll({
         where: {
             [Op.and]: [
+              { id_etablissement:idEtablissement},
                 { id: { [Op.notIn]: reservedSalleIds } },
                 { MREST: { [Op.gt]: 0 } }
             ]
@@ -1000,6 +1066,7 @@ reservationSalleUpdateSeance:async (request, response) => {
 reservationSalleUpdateSeanceValid: async (request, response) => {
   try {
     const { typeFormation, idSalle, idReservation } = request.body;
+    const [idEtablissement] = request.user.idEtablissement;
 
     // Vérification des paramètres requis
     if (!idSalle && !typeFormation) {
@@ -1047,7 +1114,7 @@ reservationSalleUpdateSeanceValid: async (request, response) => {
    
     // Récupération de toutes les réservations du groupe avec leurs détails
     const reservations = await Reservation.findAll({
-      where: { idGroupe: reservationFound.idGroupe },
+      where: { id_etablissement:idEtablissement,idGroupe: reservationFound.idGroupe },
       include: [
         { model: Salle, as: "salle", attributes: ['nom'] },
         { model: Formateur, as: "formateur", attributes: ['matricule', 'nom', 'prenom'] },
@@ -1072,6 +1139,7 @@ getEmploisPrime: async (request, response) => {
     if (!idGroupe) {
       return response.status(400).json({ error: 'idGroupe is required' });
     }
+    const [idEtablissement] = request.user.idEtablissement;
 
     const groupe = await Groupe.findByPk(idGroupe, {
       include: [{
@@ -1085,6 +1153,7 @@ getEmploisPrime: async (request, response) => {
 
     const reservations = await Reservation.findAll({
       where: {
+        id_etablissement:idEtablissement,
         idGroupe: { [Op.eq]: groupe.id } // Assuming 'groupe' refers to 'idGroupe'
 
       },
@@ -1117,6 +1186,8 @@ getEmploisPrime: async (request, response) => {
 },
 getEmploisSallePrime:async (request, response) => {
   try {
+    const [idEtablissement] = request.user.idEtablissement;
+
     const { idSalle } = request.query;
     if (!idSalle) {
       return response.status(400).json({ error: 'idSalle is required' });
@@ -1128,6 +1199,7 @@ getEmploisSallePrime:async (request, response) => {
     }
     const reservations = await Reservation.findAll({
       where: {
+        id_etablissement:idEtablissement,
         idSalle: { [Op.eq]: salle?.id } // Assuming 'groupe' refers to 'idGroupe'
       },
       include: [
@@ -1190,45 +1262,51 @@ getEmploisFormateurCentrePrime:async (request, response) => {
     response.status(500).send('Erreur lors de la vérification des emplois');
   }
 },
-  getEmploisAllOFDatabase: async (request, response) => {
-    try {
-      // Recherche de toutes les réservations avec toutes les associations et tous les attributs
-      const reservations = await Reservation.findAll({
-        include: [
-          {
-            model: Formateur,
-            as: "formateur"
-          },
-          {
-            model: Module,
-            as: "module"
-          },
-          {
-            model: Groupe,
-            as: "groupe",
-            include: [
-              {
-                model: Filiere,
-                as: "filiere"
-              }
-            ]
-          },
-          {
-            model: Salle,
-            as: "salle"
-          }
-        ]
-      });
+getEmploisAllOFDatabase: async (request, response) => {
+  try {
+     [idEtablissement] = request.user.idEtablissement;
 
-      // Réponse en cas de succès
-      response.status(200).json(reservations);
-    } catch (error) {
-      // Log de l'erreur pour le débogage
-      console.error('Erreur lors de la récupération des emplois:', error);
-      // Réponse en cas d'erreur
-      response.status(500).send('Erreur lors de la récupération des emplois');
-    }
+    // Recherche de toutes les réservations avec toutes les associations et tous les attributs
+    const reservations = await Reservation.findAll({
+      where: {
+        id_etablissement: idEtablissement
+      },
+      include: [
+        {
+          model: Formateur,
+          as: "formateur"
+        },
+        {
+          model: Module,
+          as: "module"
+        },
+        {
+          model: Groupe,
+          as: "groupe",
+          include: [
+            {
+              model: Filiere,
+              as: "filiere"
+            }
+          ]
+        },
+        {
+          model: Salle,
+          as: "salle"
+        }
+      ]
+    });
+   console.log('ddd',reservations)
+    // Réponse en cas de succès
+    response.status(200).json(reservations);
+  } catch (error) {
+    // Log de l'erreur pour le débogage
+    console.error('Erreur lors de la récupération des emplois:', error);
+    // Réponse en cas d'erreur
+    response.status(500).send('Erreur lors de la récupération des emplois');
   }
+},
+
 }
 module.exports = emploisController;
 

@@ -32,6 +32,15 @@ function initialModelGroupe(sequelize) {
             },
             onDelete: "CASCADE"
         },
+        id_etablissement: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "etablissements",
+                key: "id",
+            },
+            onDelete: "CASCADE"
+        }
     }, {
         sequelize,
         modelName: "Groupe",

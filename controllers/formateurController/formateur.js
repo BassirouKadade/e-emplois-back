@@ -5,19 +5,18 @@ const formateurController = {
   ajouter: async (request, response) => {
 
     try {
-      [idEtablissement]=request.user,idEtablissement
+      [idEtablissement]=request.user.idEtablissement
 
       const { nom, prenom, metier, email, matricule } = request.body;
       
-      console.log(idEtablissement)
       const errorServer = {};
 
-      if (!nom || !prenom || !metier || !email || !matricule) {
+      if (!nom || !idEtablissement || !prenom || !metier || !email || !matricule) {
         errorServer.error = 'Tous les champs sont obligatoires';
         return response.status(400).json(errorServer);
       }
 
-      const formateurExist = await Formateur.findOne({ where: { matricule } });
+      const formateurExist = await Formateur.findOne({ where: { matricule,id_etablissement:idEtablissement } });
 
       if (formateurExist) {
         errorServer.existMat = "Formateur avec ce matricule existe déjà";
@@ -31,7 +30,7 @@ const formateurController = {
         return response.status(400).json(errorServer);
       }
 
-      const formateur = { nom, prenom, metier, email, matricule };
+      const formateur = { nom, prenom, metier, email, matricule,id_etablissement:idEtablissement };
       await Formateur.create(formateur);
       response.status(201).json({ success: "Formateur ajouté avec succès" });
     } catch (error) {
@@ -42,10 +41,16 @@ const formateurController = {
 
   liste: async (request, response) => {
     try {
+      [idEtablissement]=request.user.idEtablissement
+
       const page = parseInt(request.query.page) || 1;
       const limit = 6; // Nombre d'éléments par page
       const offset = (page - 1) * limit; // Calcul de l'offset
       const { count, rows } = await Formateur.findAndCountAll({
+           where:{
+              id_etablissement:idEtablissement
+           }
+      },{
         limit,
         offset,
       });
@@ -67,7 +72,7 @@ const formateurController = {
   try {
     console.log( request.params.ids)
     const formateurIds = request.params.ids.split('-');
-    console.log(formateurIds)
+    
     await Formateur.destroy({
         where: {
             id: formateurIds
@@ -93,7 +98,7 @@ update: async (request, response) => {
       return response.status(400).json(errorServer);
     }
 
-    const formateurExistMat = await Formateur.findOne({ where: { matricule } });
+    const formateurExistMat = await Formateur.findOne({ where: { matricule ,id_etablissement:idEtablissement } });
     if (formateurExistMat && formateurExistMat.id!== id) {
       errorServer.existeEMat = "Ce matricule existe déjà";
       return response.status(400).json(errorServer);
@@ -122,15 +127,15 @@ update: async (request, response) => {
 searchNext: async (request, response) => {
   try {
     const { search, page } = request.query;
+    [idEtablissement]=request.user.idEtablissement
+
     let pageNumber = 1; // Par défaut, définir la page sur 1
 
     if (page && !isNaN(parseInt(page))) {
       // Vérifier si page est défini et qu'il peut être converti en un nombre
       pageNumber = parseInt(page);
     }
-    
-    console.log("search pages", pageNumber);
-    
+        
     if (!search) {
       return response.status(400).json({ message: 'Search term is required' });
     }
@@ -150,6 +155,10 @@ searchNext: async (request, response) => {
     const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
     const { count, rows } = await Formateur.findAndCountAll({
+         where:{
+          id_etablissement:idEtablissement
+         }
+    },{
       limit,
       offset,
       where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
@@ -169,7 +178,13 @@ searchNext: async (request, response) => {
 
 allFormateurs:async (request, response) => {
   try {
-     const liste= await Formateur.findAll()
+    [idEtablissement]=request.user.idEtablissement
+
+     const liste= await Formateur.findAll({
+        where:{
+           id_etablissement:idEtablissement
+        }
+     })
     response.status(200).json(liste);
   } catch (error) {
     console.error(error);
@@ -228,7 +243,8 @@ getGroupesNonInclusFormateur: async (request, response) => {
   try {
       const { idFormateur } = request.query;
       const formateurExist = await Formateur.findByPk(idFormateur);
-      
+      [idEtablissement]=request.user.idEtablissement
+
       if (!formateurExist) {
           return response.status(404).json({ error: "Formateur non trouvée" });
       }
@@ -240,7 +256,10 @@ getGroupesNonInclusFormateur: async (request, response) => {
           where: {
               id: {
                   [Op.notIn]: listeIdGroupeFormateur
-              }
+              },
+              id_etablissement: {
+                [Op.eq]: idEtablissement
+            }
           }
       });
 

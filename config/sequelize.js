@@ -147,6 +147,55 @@ Salle.belongsTo(Etablissement, {
 });
 
 
+
+/*
+***************************************
+//  Relation Etablissement et users
+*/
+Etablissement.hasMany(Groupe, {
+  foreignKey: 'id_etablissement',
+  as: 'groupes',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+Groupe.belongsTo(Etablissement, {
+  foreignKey: 'id_etablissement',
+  as: 'etablissement',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+
+
+/*
+***************************************
+//  Relation Etablissement et users
+*/
+Etablissement.hasMany(Module, {
+  foreignKey: 'id_etablissement',
+  as: 'modules',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+Module.belongsTo(Etablissement, {
+  foreignKey: 'id_etablissement',
+  as: 'etablissement',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+
+
+
+/*
+***************************************
+//  Relation Etablissement et users
+*/
+Etablissement.hasMany(Reservation, {
+  foreignKey: 'id_etablissement',
+  as: 'reservations',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+Reservation.belongsTo(Etablissement, {
+  foreignKey: 'id_etablissement',
+  as: 'etablissement',
+  onDelete: 'CASCADE' // Supprimer tous les groupes associés lorsqu'une filière est supprimée
+});
+
 /*
 ***************************************
 //  Relation Filiere et Module Many To Many
