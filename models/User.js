@@ -18,6 +18,10 @@ function initialModelUser(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
+        photo:{
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         email: {
             type: DataTypes.STRING,
             allowNull: false

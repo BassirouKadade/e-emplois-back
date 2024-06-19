@@ -38,8 +38,8 @@ const seedUsers = async () => {
           password: hashedPassword // Store hashed password in the database
         });
 
-        const roles = await Role.findAll(); // Supposons que Role soit votre modèle Sequelize pour les rôles
-        await user.addRoles(roles);
+        const role = await Role.findByPk(1)
+        await user.addRole(role);
         
         console.log(`User ${userData.nom} ${userData.prenom} has been created.`);
       }
@@ -55,5 +55,3 @@ const seedUsers = async () => {
 // Export the seeding function
 module.exports = seedUsers;
 
-// Immediately invoke the seeding function (optional)
-seedUsers();

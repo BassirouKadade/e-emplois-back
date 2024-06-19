@@ -6,8 +6,9 @@ const userController = {
 
   ajouter: async (request, response) => {
     try {
-      const { nom, prenom, password, email } = request.body;
+      const { nom, image, prenom, password, email } = request.body;
   
+      console.log('iage',image)
       const errorServer = {};
   
       if (!nom || !prenom || !email || !password) {
@@ -359,15 +360,16 @@ const userController = {
         console.error(error);
         response.status(500).send('Erreur lors de la récupération des rôles');
     }
-  },ajouterRoleUser: async (request, response) => {
+  },
+   ajouterRoleUser : async (request, response) => {
     try {
       const { idUser, idRole } = request.body;
       
-      // Vérification que idUser et idRole sont fournis
-      if (!idUser || !idRole) {
-          return response.status(400).json({ error: "L'identifiant de l'utilisateur et du rôle sont requis" });
+      // Vérification que idUser et idRole sont fournis et sont des nombres
+      if (!idUser || isNaN(idUser) || !idRole || isNaN(idRole)) {
+          return response.status(400).json({ error: "L'identifiant de l'utilisateur et du rôle doivent être des nombres valides" });
       }
-
+  
       const user = await User.findByPk(idUser);
       
       if (!user) {
@@ -375,18 +377,18 @@ const userController = {
       }
       
       const role = await Role.findByPk(idRole);
-
+  
       if (!role) {
           return response.status(404).json({ error: "Rôle non trouvé" });
       }
       
       // Ajout du rôle à l'utilisateur
       await user.addRole(role);
-
-      response.status(200).json({ message: "Rôle ajouté avec succès à l'utilisateur" });
+  
+      return response.status(200).json({ message: "Rôle ajouté avec succès à l'utilisateur" });
     } catch (error) {
-      console.error(error);
-      response.status(500).send('Erreur lors de l\'ajout du rôle à l\'utilisateur');
+      console.error('Erreur lors de l\'ajout du rôle à l\'utilisateur:', error);
+      return response.status(500).json({ error: 'Erreur interne du serveur' });
     }
   },
   deleteRoleUser: async (request, response) => {
@@ -440,7 +442,19 @@ const userController = {
       console.error(error);
       response.status(500).send("Erreur lors de la suppression de l'établissement");
     }
-  }
+  },
+  getInfoUserConnect:async (request, response) => {
+    try {
+       id=request.user.id
+       const user=await User.findByPk(id)
+
+      response.status(200).json(user);
+    } catch (error) {
+      console.error(error);
+      response.status(500).send("Erreur lors de la suppression de l'établissement");
+    }
+  },
+
   }
   
   module.exports = userController;

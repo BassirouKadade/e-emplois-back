@@ -13,7 +13,9 @@ const groupeRoute=require('./routes/groupeRoute')
 const userRoute=require('./routes/userRoute')
 const emploisRoute=require('./routes/emploisRoute')
 const etablissementRoute=require('./routes/etablissementRoute')
+const path=require('path')
 const seedRoles=require('./routes/roles')
+
 const seedUsers=require('./routes/users')
 
 const app = express();
@@ -29,6 +31,7 @@ app.use(cors({
 // Utilisation de body-parser pour analyser les corps de requête JSON et URL encodés
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'uploads')));
 
 app.use('/formateur',verifyToken,formateurRoute)
 app.use('/module',verifyToken, moduleRoute)
