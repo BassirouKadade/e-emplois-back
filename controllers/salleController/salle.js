@@ -125,6 +125,7 @@ const salleController = {
       }
 
       const searchOptions = {
+        id_etablissement: idEtablissement,
         [Op.or]: [
           { nom: { [Op.like]: `%${search}%` } },
           { emplacement: { [Op.like]: `%${search}%` } },
@@ -136,11 +137,7 @@ const salleController = {
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
       const { count, rows } = await Salle.findAndCountAll(
-        {
-           where:{
-            id_etablissement: idEtablissement
-           }
-        },
+      
         {
         limit,
         offset,

@@ -127,8 +127,8 @@ update: async (request, response) => {
 searchNext: async (request, response) => {
   try {
     const { search, page } = request.query;
-    [idEtablissement]=request.user.idEtablissement
-
+    const [idEtablissement] = request.user.idEtablissement; // Assurez-vous que idEtablissement est correctement assigné
+    
     let pageNumber = 1; // Par défaut, définir la page sur 1
 
     if (page && !isNaN(parseInt(page))) {
@@ -141,30 +141,22 @@ searchNext: async (request, response) => {
     }
 
     const searchOptions = {
-      [Op.or]: [
-        { nom: { [Op.like]: `%${search}%` } },
-        { prenom: { [Op.like]: `%${search}%` } },
-        { matricule: { [Op.like]: `%${search}%` } },
-        // { email: { [Op.like]: `%${search}%` } },
-        { metier: { [Op.like]: `%${search}%` } },
-      ],
+      where: {
+        id_etablissement: idEtablissement,
+        [Op.or]: [
+          { nom: { [Op.like]: `%${search}%` } },
+          { prenom: { [Op.like]: `%${search}%` } },
+          { matricule: { [Op.like]: `%${search}%` } },
+          { metier: { [Op.like]: `%${search}%` } },
+        ],
+      },
+      limit: 6, // Nombre d'éléments par page
+      offset: (pageNumber - 1) * 6, // Calcul de l'offset en fonction de la page
     };
 
-    const limit = 6; // Nombre d'éléments par page
-  
-    const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
+    const { count, rows } = await Formateur.findAndCountAll(searchOptions);
 
-    const { count, rows } = await Formateur.findAndCountAll({
-         where:{
-          id_etablissement:idEtablissement
-         }
-    },{
-      limit,
-      offset,
-      where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll
-    });
-   
-    const totalPages = Math.ceil(count / limit); // Nombre total de pages
+    const totalPages = Math.ceil(count / searchOptions.limit); // Nombre total de pages
     response.status(200).json({
       totalPages,
       currentPage: pageNumber,

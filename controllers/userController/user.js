@@ -329,38 +329,37 @@ const userController = {
       response.status(500).send('Erreur lors de la récupération des modules');
     }
   },
-  getRolesNotAddedUser: async (request, response) => {
+  getRolesNotAddedUser:  async (requete, réponse) => {
     try {
-        const { idUser } = request.query;
-        
-        // Vérification que idUser est fourni
+        const { idUser } = requete.query;
+
         if (!idUser) {
-            return response.status(400).json({ error: "L'identifiant de l'utilisateur est requis" });
+            return réponse.status(400).json({ erreur: "L'identifiant de l'utilisateur est requis" });
         }
 
-        const user = await User.findByPk(idUser);
-        
-        if (!user) {
-            return response.status(404).json({ error: "Utilisateur non trouvé" });
+        const utilisateur = await User.findByPk(idUser);
+
+        if (!utilisateur) {
+            return réponse.status(404).json({ erreur: "Utilisateur non trouvé" });
         }
-        
-        const rolesUser = await user.getRoles();
-        const listeIdRolesUser = rolesUser.map(role => role.id);
-  
-        const rolesNotAdded = await Role.findAll({
+
+        const rolesUtilisateur = await utilisateur.getRoles();
+        const listeIdRolesUtilisateur = rolesUtilisateur.map(role => role.id);
+
+        const rolesNonAjoutes = await Role.findAll({
             where: {
                 id: {
-                    [Op.notIn]: listeIdRolesUser
+                    [Op.notIn]: listeIdRolesUtilisateur
                 }
             }
         });
-  
-        response.status(200).json(rolesNotAdded);
-    } catch (error) {
-        console.error(error);
-        response.status(500).send('Erreur lors de la récupération des rôles');
+
+        réponse.status(200).json(rolesNonAjoutes);
+    } catch (erreur) {
+        console.error(erreur);
+        réponse.status(500).send('Erreur lors de la récupération des rôles');
     }
-  },
+},
    ajouterRoleUser : async (request, response) => {
     try {
       const { idUser, idRole } = request.body;

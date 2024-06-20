@@ -138,6 +138,8 @@ const groupeController = {
       }
 
       const searchOptions = {
+        id_etablissement:idEtablissement,
+
         [Op.or]: [
           { code: { [Op.like]: `%${search}%` } },
           { description: { [Op.like]: `%${search}%` } },
@@ -149,12 +151,7 @@ const groupeController = {
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
       const { count, rows } = await Groupe.findAndCountAll(
-        {
-          where:{
-             id_etablissement:idEtablissement
-          }
-        }
-          ,{
+       {
         limit,
         offset,
         where: searchOptions, // Déplacez cet objet dans les options globales de findAndCountAll

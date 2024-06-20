@@ -147,6 +147,7 @@ const moduleController = {
       }
 
       const searchOptions = {
+        id_etablissement:idEtablissement,
         [Op.or]: [
           { codeModule: { [Op.like]: `%${search}%` } },
           { description: { [Op.like]: `%${search}%` } },
@@ -158,9 +159,7 @@ const moduleController = {
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
       const { count, rows } = await Module.findAndCountAll(
-        {
-          id_etablissement:idEtablissement
-        },
+      
         {
         limit,
         offset,

@@ -136,6 +136,7 @@ const filiereController = {
       }
 
       const searchOptions = {
+        id_etablissement:idEtablissement,
         [Op.or]: [
           { code: { [Op.like]: `%${search}%` } },
           { niveau: { [Op.like]: `%${search}%` } },
@@ -147,11 +148,7 @@ const filiereController = {
       const offset = (pageNumber - 1) * limit; // Calcul de l'offset en fonction de la page
 
       const { count, rows } = await Filiere.findAndCountAll(
-        {
-          where:{
-             id_etablissement:idEtablissement
-          }
-        },{
+       {
         limit,
         offset,
         where: searchOptions,
