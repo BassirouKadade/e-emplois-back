@@ -35,7 +35,7 @@ const userController = {
       // Créer l'utilisateur avec le mot de passe haché
       const user = { nom, prenom, password: hashedPassword, email };
       await User.create(user);
-      await transporter.sendMail(option(email, typemessage.creerCompte(password,email)));
+      await transporter.sendMail(option(email,"Confirmation de création de compte sur E-Emplois", typemessage.creerCompte(password,email)));
 
       response.status(201).json({ success: "Utilisateur ajouté avec succès" });
     } catch (error) {

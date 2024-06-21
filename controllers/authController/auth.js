@@ -60,7 +60,7 @@ const auth = {
             existUser.otpSecret=secret.base32 
             await existUser.save()
             
-            await transporter.sendMail(option(email, typemessage.optMail(otpValue)));
+            await transporter.sendMail(option(email,"Votre code de connexion sécurisé", typemessage.optMail(otpValue)));
 
             return response.status(200).json(token);
         } catch (error) {
@@ -159,7 +159,7 @@ const auth = {
     
             // Envoyer l'e-mail avec le token de réinitialisation
             try {
-                await transporter.sendMail(option(email, typemessage.motdepasseoublier(token)));
+                await transporter.sendMail(option(email,"Réinitialisez votre mot de passe",  typemessage.motdepasseoublier(token)));
                 console.log('Email envoyé avec succès pour la réinitialisation du mot de passe');
               } catch (error) {
                 console.error('Erreur lors de l\'envoi de l\'email de réinitialisation du mot de passe :', error);
