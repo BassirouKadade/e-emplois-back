@@ -4,18 +4,11 @@ const bcrypt = require('bcrypt');
 // Array of user data to be seeded
 const users = [
   {
-    nom: 'user',
-    prenom: 'user',
-    email: 'user@gmail.com',
-    password: '1234' // Plain text password
+    nom: 'Bassirou',
+    prenom: 'Kadadé',
+    email: 'bassiroukadade1@gmail.com',
+    password: ';Bacho1234' // Plain text password
   },
-  {
-    nom: 'admin',
-    prenom: 'admin',
-    email: 'admin@gmail.com',
-    password: '1234' // Plain text password
-  }
-  // Add more users as needed
 ];
 
 // Seeding function

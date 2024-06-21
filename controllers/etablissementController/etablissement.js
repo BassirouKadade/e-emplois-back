@@ -165,6 +165,8 @@ getListEtablissementAll: async (request, response) => {
     response.status(500).send('Erreur lors de la récupération des groupes');
   }
 },
+
 };
+
 
 module.exports = etablissementController;

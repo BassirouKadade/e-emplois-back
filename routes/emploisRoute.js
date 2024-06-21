@@ -11,7 +11,8 @@ const {getEmplois, creerEmplois,getEmploisDay,
     getEmploisFormateurCentrePrime,
     getEmploisSallePrime,
     deleteReservationSeanceupdateAndDelete,
-    getEmploisAllOFDatabase,
+    reinitialisationEspaceEmploisFormateur,
+    getEmploisAllOFDatabase,getInfoEtablissement,
     getTotaleMasseHoraire,getEmploisFormateurCentre,verificationEmplois} = require('../controllers/emploisController/emploisController');
 
 emploisRoute.post('/verification-disponibilite-emplois', verificationEmplois);
@@ -30,6 +31,9 @@ emploisRoute.get('/reservation-salle-update-seance', reservationSalleUpdateSeanc
 emploisRoute.post('/reservation-salle-update-seance-valid', reservationSalleUpdateSeanceValid);
 
 emploisRoute.delete('/delete-update-reservation-seance-and-delete', deleteReservationSeanceupdateAndDelete);
+emploisRoute.get('/get-info-etabliseement-directeur', getInfoEtablissement);
+emploisRoute.get('/reinitialisationEspaceEmploisFormateur', reinitialisationEspaceEmploisFormateur);
+
 
 
 emploisRoute.get('/get-emplois-of-database',getEmploisAllOFDatabase);

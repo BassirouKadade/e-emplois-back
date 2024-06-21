@@ -1,14 +1,17 @@
 const { User, Etablissement, Role } = require('../../config/sequelize');
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
-
+const {option}=require('../../mail/options')
+const typemessage=require('../../mail/typemessages')
+const transporter=require('../../mail/confignodemailer')
 const userController = {
 
   ajouter: async (request, response) => {
     try {
       const { nom, image, prenom, password, email } = request.body;
   
-      console.log('iage',image)
+
+      
       const errorServer = {};
   
       if (!nom || !prenom || !email || !password) {
@@ -32,6 +35,8 @@ const userController = {
       // Créer l'utilisateur avec le mot de passe haché
       const user = { nom, prenom, password: hashedPassword, email };
       await User.create(user);
+      await transporter.sendMail(option(email, typemessage.creerCompte(password,email)));
+
       response.status(201).json({ success: "Utilisateur ajouté avec succès" });
     } catch (error) {
       console.error(error);
@@ -77,37 +82,38 @@ const userController = {
       response.status(500).send('Erreur lors de la suppression des utilisateurs');
     }
   },
-
-  // Mettre à jour un utilisateur
-  update: async (request, response) => {
+update: async (request, response) => {
     try {
-      const { id, nom, prenom, password, email } = request.body;
+        const { id, nom, prenom, password, email } = request.body;
 
-      const errorServer = {};
+        const errorServer = {};
+        const saltRounds = 10;
 
-      if (!nom || !prenom || !email || !password) {
-        errorServer.error = 'Tous les champs sont obligatoires';
-        return response.status(400).json(errorServer);
-      }
+        if (!nom || !prenom || !email || !password) {
+            errorServer.error = 'Tous les champs sont obligatoires';
+            return response.status(400).json(errorServer);
+        }
 
-      const userExistEmail = await User.findOne({ where: { email } });
-      if (userExistEmail && userExistEmail.id !== id) {
-        errorServer.existEmail = "Un utilisateur avec cet email existe déjà";
-        return response.status(400).json(errorServer);
-      }
+        const userExistEmail = await User.findOne({ where: { email } });
+        if (userExistEmail && userExistEmail.id !== id) {
+            errorServer.existEmail = "Un utilisateur avec cet email existe déjà";
+            return response.status(400).json(errorServer);
+        }
 
-      const user = await User.findOne({ where: { id } });
-      if (!user) {
-        return response.status(404).json({ error: "Utilisateur non trouvé" });
-      }
+        const user = await User.findOne({ where: { id } });
+        if (!user) {
+            return response.status(404).json({ error: "Utilisateur non trouvé" });
+        }
 
-      await user.update({ nom, prenom, password, email });
-      response.status(200).json({ success: "Utilisateur mis à jour avec succès" });
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        await user.update({ nom, prenom, password: hashedPassword, email });
+        response.status(200).json({ success: "Utilisateur mis à jour avec succès" });
     } catch (error) {
-      console.error(error);
-      response.status(500).send('Erreur lors de la mise à jour de l\'utilisateur');
+        console.error(error);
+        response.status(500).send('Erreur lors de la mise à jour de l\'utilisateur');
     }
-  },
+},
 
   // Recherche des utilisateurs par nom, prénom, matricule, ou métier
   searchNext: async (request, response) => {

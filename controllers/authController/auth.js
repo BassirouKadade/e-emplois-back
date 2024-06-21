@@ -11,14 +11,6 @@ const {generateOTP}=require('../../auth-otp/generateOTP')
 
 const bcrypt = require('bcrypt');
 // ***************************** Le code pour la verification de OTP
-const verifyOTP = async (user, otp) => {
-    return speakeasy.totp.verify({
-        secret: user.otpSecret, // Le secret OTP de l'utilisateur (stocké en base de données)
-        encoding: 'base32',
-        token: otp, // Le code OTP fourni par l'utilisateur
-        window: 2 // Fenêtre de vérification (en cas de décalage temporel, le code OTP reste valide dans cette fenêtre)
-    });
-};
 
 
 const auth = {
@@ -44,33 +36,33 @@ const auth = {
                 return response.status(401).json(errors);
             }
 
-            // Get user roles
-            const roles = await existUser.getRoles();
-            const role = roles.map(el => el.name); // Using el.name directly
+            // // Get user roles
+            // const roles = await existUser.getRoles();
+            // const role = roles.map(el => el.name); // Using el.name directly
 
-            // Get user's establishments
-            const etablissements = await Etablissement.findAll({
-                where: { id_user: existUser.id }
-            });
-            const etablissementsId = etablissements.map(etabli => etabli.id);
+            // // Get user's establishments
+            // const etablissements = await Etablissement.findAll({
+            //     where: { id_user: existUser.id }
+            // });
+            // const etablissementsId = etablissements.map(etabli => etabli.id);
 
-            // Create JWT token with user information
+            // // Create JWT token with user information
             const token = jwt.sign(
-                { id: existUser.id, idEtablissement: etablissementsId, roles: role },
+                { id: existUser.id },
                 process.env.JWT_SECRET,
-                { expiresIn: "1h" } // Example: token expires in 1 hour
+                { expiresIn: "2m" } // Example: token expires in 1 hour
             );
 
             const secret=generateSecret()
             // Générer un OTP à partir du secret
 
             const otpValue = generateOTP(secret.base32);
-            existUser.existUser=secret.base32 
+            existUser.otpSecret=secret.base32 
             await existUser.save()
             
             await transporter.sendMail(option(email, typemessage.optMail(otpValue)));
 
-            return response.status(200).json(token );
+            return response.status(200).json(token);
         } catch (error) {
             console.error('Une erreur est survenue lors de la connexion de l\'utilisateur :', error);
             return response.status(500).json({ message: "Une erreur est survenue lors de la connexion de l'utilisateur." });
@@ -78,7 +70,7 @@ const auth = {
     },
     updateProfile: async (request, response) => {
         try {
-            const { id, email, image, nom, prenom, motDePasse } = request.body;
+            const { id, email, nom, prenom, motDePasse } = request.body;
             const errors = {};
             
             // Récupérer le nom du fichier téléchargé
@@ -105,7 +97,7 @@ const auth = {
             }
             
             const saltRounds = 10; // Nombre de rounds de sel pour bcrypt
-            
+        
             // Hasher le mot de passe si fourni
             let hashedPassword = existUser.motDePasse; // Conserver le hash existant si le mot de passe n'est pas changé
             if (motDePasse) {
@@ -225,7 +217,102 @@ const auth = {
             return response.status(500).json({ message: "Une erreur est survenue lors de la réinitialisation du mot de passe. Veuillez réessayer." });
         }
     }
-    
+    ,
+  
+verifyUserOtp: async (request, response) => {
+    try {
+        const { token, email } = request.body;
+
+        // console.log('Token reçu:', token);
+        // console.log('Email reçu:', email);
+
+        // Find user by email
+        const existUser = await User.findOne({
+            where: { email: email }
+        });
+
+        // Check if user exists
+        if (!existUser) {
+            return response.status(401).json({ error: "L'utilisateur n'existe pas." });
+        }
+
+        // console.log('Utilisateur trouvé:', existUser);
+
+        // Function to verify OTP
+        const verifyOTP = async (user, otp) => {
+            // console.log('Secret OTP de l\'utilisateur:', user.otpSecret);
+            // console.log('Token OTP fourni:', otp);
+            return speakeasy.totp.verify({
+                secret: user.otpSecret, // OTP secret stored in the database for the user
+                encoding: 'base32',
+                token: otp, // OTP token entered by the user
+                window: 2 // Allowable time drift (in seconds) for OTP validation
+            });
+        };
+
+        // Verify the OTP token
+        const isVerified = await verifyOTP(existUser, token);
+
+        // console.log('Résultat de la vérification OTP:', isVerified);
+
+        // Handle invalid OTP case
+        if (!isVerified) {
+            return response.status(400).json({ error: "Le code saisi est incorrect." });
+        }
+
+        // Fetch user roles
+        const roles = await existUser.getRoles();
+        const roleNames = roles.map(role => role.name);
+
+        // Fetch associated establishments for the user
+        const etablissements = await Etablissement.findAll({
+            where: { id_user: existUser.id }
+        });
+        const etablissementsId = etablissements.map(etablissement => etablissement.id);
+
+        // Create JWT token with user information
+        const tokenGenerate = jwt.sign(
+            { id: existUser.id, idEtablissement: etablissementsId, roles: roleNames },
+            process.env.JWT_SECRET,
+            { expiresIn: "5h" });
+
+        // Respond with the generated token
+        return response.status(200).json(tokenGenerate);
+
+    } catch (error) {
+        console.error("Une erreur est survenue lors de la vérification de l'OTP :", error);
+        return response.status(500).json({ error: "Une erreur est survenue lors de la vérification de l'OTP." });
+    }
+},
+resendMemail: async (request, response) => {
+    try {
+        const {  email } = request.body;
+
+        const existUser = await User.findOne({
+            where: { email: email }
+        });
+
+        if (!existUser) {
+            return response.status(401).json({ error: "Vous n'avez aucun compte" });
+        }
+
+        // Valider l'adresse e-mail existUser.email ici
+        const secret=generateSecret()
+        // Générer un OTP à partir du secret
+
+        const otpValue = generateOTP(secret.base32);
+        existUser.otpSecret=secret.base32 
+        await existUser.save()
+        
+        await transporter.sendMail(option(email, typemessage.optMail(otpValue)));
+
+        return response.status(200).json({ message: "Le code a été envoyé avec succès" });
+
+    } catch (error) {
+        console.error('Une erreur est survenue lors de la connexion de l\'utilisateur :', error);
+        return response.status(500).json({ message: "Une erreur est survenue lors de la connexion de l'utilisateur." });
+    }
+}
 };
 
 module.exports = auth;

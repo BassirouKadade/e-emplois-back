@@ -21,7 +21,23 @@ const typemessage = {
           <p style="color: #333;">Cordialement,<br>L'équipe de E-Emploi</p>
       </div>
       `;
-    }
+    },
+   creerCompte:(password, email)=>{
+      return `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+              <h3 style="color: #333; text-align: left; margin-bottom: 20px;">Bonjour,</h3>
+              <p style="color: #333; font-size: 14px; margin-bottom: 10px;">Vous pouvez vous connecter à votre compte avec les informations suivantes :</p>
+              <div style="background-color: #f1f1f1; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                  <p style="margin: 10px 0;"><strong>Email :</strong> ${email}</p>
+                  <p style="margin: 10px 0;"><strong>Mot de passe :</strong> ${password}</p>
+              </div>
+              <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Veuillez utiliser ces informations pour accéder à la plateforme.</p>
+              <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Lien vers E-Emplois : <a href="${process.env.BASE_URL_FRONT_END}" style="color: #0066cc; text-decoration: none;">${process.env.BASE_URL_FRONT_END}</a></p>
+              <p style="color: #333; font-size: 16px;">Cordialement,<br>L'équipe de E-Emplois</p>
+          </div>
+      `;
+  }
+  
   };
   
   module.exports = typemessage;

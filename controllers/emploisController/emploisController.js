@@ -491,7 +491,7 @@ const emploisController = {
 
         const dureeRest=module.masseHoraire-groupeModule.dr;
         const taux=(dureeRest/module.masseHoraire)*100;
-        groupeModule.etat_avancement += taux;
+        groupeModule.etat_avancement = taux;
         await groupeModule.save();
       } 
 
@@ -782,7 +782,7 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
     const avancementPourcentPRE = (masseHoraireTotalePre / masseHoraireTotalModule) * 100;
 
     // Recreate the reservation
-    await Reservation.create({
+    const rev=  await Reservation.create({
       startIndex: reservationDeleted.startIndex,
       startEnd: reservationDeleted.startEnd,
       typeReservation: reservationDeleted.typeReservation,
@@ -797,6 +797,23 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
       id_etablissement:idEtablissement,
     });
 
+
+    if (rev.idSalle) {
+      // Find the room by name
+      const salleFind = await Salle.findOne({
+        where: {
+          id: {
+            [Op.eq]: rev.idSalle
+          }
+        }
+      });
+
+      // If the room is found, update its remaining hours
+      if (salleFind) {
+        salleFind.MREST -= rev.nombeHeureSeance;
+        await salleFind.save();
+      }
+    }
     // Update module progress
     const masseHoraireReserMod = await Reservation.findAll({
       where: { id_etablissement:idEtablissement,idModule: module.id, idGroupe: groupe.id }
@@ -822,7 +839,7 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
     } else {
       console.log('L\'association entre le groupe et le module n\'existe pas.');
     }
-
+ 
     // Calculate total group progress
     const modulesFind = await groupe.getModules();
     const modulesAvecReservations = modulesFind.map(module => module.id);
@@ -1306,6 +1323,103 @@ getEmploisAllOFDatabase: async (request, response) => {
     response.status(500).send('Erreur lors de la récupération des emplois');
   }
 },
+getInfoEtablissement: async (request, response) => {
+  try {
+    [idEtablissement] = request.user.idEtablissement;
+     
+      const etablissementFind=await Etablissement.findByPk(idEtablissement)
+          response.status(200).json(etablissementFind);
+  } catch (error) {
+    console.error(error);
+   
+    response.status(500).send('Erreur lors de la récupération des groupes');
+  }
+},
+reinitialisationEspaceEmploisFormateur : async (request, response) => {
+  try {
+    const idUser = request.user.id;
+
+    // Fetching the establishment associated with the user
+    const etablissement = await Etablissement.findOne({
+      where: {
+        id_user: idUser
+      }
+    });
+
+    if (!etablissement) {
+      return response.status(404).send('Etablissement non trouvé pour cet utilisateur.');
+    }
+
+    // Fetching all rooms (salles) associated with the establishment
+    const salles = await Salle.findAll({
+      where: {
+        id_etablissement: etablissement.id
+      }
+    });
+
+    // Update MREST of each salle to match MH
+    await Promise.all(salles.map(async (salle) => {
+      salle.MREST = salle.MH;
+      await salle.save(); // Save each salle after updating MREST
+    }));
+
+    // Fetching all reservations (reservations) associated with the establishment
+    const reservations = await Reservation.findAll({
+      where: {
+        id_etablissement: etablissement.id
+      }
+    });
+
+    // Delete all reservations
+    await Promise.all(reservations.map(async (reservation) => {
+      await reservation.destroy(); // Delete each reservation
+    }));
+
+    // Fetching all groups (groupes) associated with the establishment
+    const groupes = await Groupe.findAll({
+      where: {
+        id_etablissement: etablissement.id
+      }
+    });
+
+    // Update etat_avancement of each groupe to 0 and perform additional operations with modules
+    await Promise.all(groupes.map(async (groupe) => {
+      // Update etat_avancement of groupe to 0
+      groupe.etat_avancement = 0;
+      await groupe.save(); // Save each groupe after updating etat_avancement
+
+      // Fetch all modules associated with the establishment
+      const modules = await Module.findAll({
+        where: {
+          id_etablissement: etablissement.id
+        }
+      });
+
+      // Update GroupeModule associations for each module
+      await Promise.all(modules.map(async (module) => {
+        // Find or create GroupeModule association
+        let groupeModule = await GroupeModule.findOne({
+          where: {
+            GroupeId: groupe.id,
+            ModuleId: module.id
+          }
+        });
+
+          // Update existing GroupeModule
+          groupeModule.etat_avancement = 0;
+          groupeModule.dr = module.masseHoraire; // Update dr if needed
+          await groupeModule.save();
+  
+      }));
+    }));
+
+    // Respond with success message
+    response.status(200).json({ message: 'Opérations effectuées avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la vérification des emplois :', error);
+    response.status(500).send('Erreur lors de la vérification des emplois');
+  }
+}
 
 }
 module.exports = emploisController;
