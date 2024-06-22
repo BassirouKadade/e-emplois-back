@@ -10,14 +10,25 @@ const { initialModelEtablissement } = require('../models/Etablissement'); // Imp
 const { initialModelFormateur } = require('../models/Formateur'); // Importation du modèle Formateur
 const {initialModelGroupeModule}=require('../models/GroupeModule')
 // Création de l'instance Sequelize avec les informations de connexion à la base de données
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.USERNAME_APP, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  dialect: 'mysql',
+// const sequelize = new Sequelize(process.env.DB_NAME, process.env.USERNAME_APP, process.env.DB_PASSWORD, {
+//   host: process.env.DB_HOST,
+//   port: process.env.DB_PORT,
+//   dialect: 'mysql',
+//   define: {
+//     timestamps: true // Activation des timestamps (createdAt et updatedAt)
+//   }
+// });
+
+const sequelize = new Sequelize(process.env.DB_URL, {
+ dialect: 'postgres',
+ host: process.env.HOST,
+ port: 5432,
+ logging: false, // Désactiver les journaux SQL (vous pouvez les activer pour le débogage)
   define: {
     timestamps: true // Activation des timestamps (createdAt et updatedAt)
   }
 });
+
 
 // // Initialisation des modèles avec Sequelize et association des modèles si nécessaire
  const User = initialModelUser(sequelize); // Initialisation du modèle User
