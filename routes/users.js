@@ -34,12 +34,8 @@ const seedUsers = async () => {
         const role = await Role.findByPk(1)
         await user.addRole(role);
         
-        console.log(`User ${userData.nom} ${userData.prenom} has been created.`);
       }
-    } else {
-      // If users already exist, log a message
-      console.log('Users already exist, seeding not required.');
-    }
+    } 
   } catch (error) {
     console.error('Error seeding users:', error);
   }

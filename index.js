@@ -15,10 +15,12 @@ const emploisRoute=require('./routes/emploisRoute')
 const etablissementRoute=require('./routes/etablissementRoute')
 const path=require('path')
 const seedRoles=require('./routes/roles')
+const compression = require('compression');
 
 const seedUsers=require('./routes/users')
 
 const app = express();
+app.use(compression());
 
 const port = process.env.PORT || 3001;
 

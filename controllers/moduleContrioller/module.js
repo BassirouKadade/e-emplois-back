@@ -71,9 +71,7 @@ const moduleController = {
   
   supprimer: async (request, response) => {
     try {
-      console.log(request.params.ids);
       const moduleIds = request.params.ids.split('-');
-      console.log(moduleIds);
       await Module.destroy({
         where: {
           id: moduleIds

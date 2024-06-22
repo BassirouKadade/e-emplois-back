@@ -70,7 +70,6 @@ const formateurController = {
   },
  supprimer: async  (request, response)=>  {
   try {
-    console.log( request.params.ids)
     const formateurIds = request.params.ids.split('-');
     
     await Formateur.destroy({

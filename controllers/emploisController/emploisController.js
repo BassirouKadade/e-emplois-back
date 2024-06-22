@@ -135,7 +135,7 @@ const emploisController = {
     }
   },
   creerEmplois: async (request, response) => {
-    console.log('ffff',request.user)
+
     try {
       const {
         startIndex,
@@ -238,10 +238,7 @@ const emploisController = {
         groupeModule.etat_avancement = avancementPourcent+pourcentagePrecedante;
         groupeModule.dr -=resultNombre;
         await groupeModule.save();
-        console.log('État d\'avancement mis à jour avec succès.');
-      } else {
-        console.log('L\'association entre le groupe et le module n\'existe pas.');
-      }
+      } 
   
       // Calcul de l'état d'avancement total du groupe
 
@@ -835,7 +832,6 @@ deleteReservationSeanceupdateAndDelete :async (request, response) => {
       groupeModule.etat_avancement = avancementPourcent + pourcentagePrecedante;
       groupeModule.dr -=reservationDeleted.nombeHeureSeance;
       await groupeModule.save();
-      console.log('État d\'avancement mis à jour avec succès.');
     } else {
       console.log('L\'association entre le groupe et le module n\'existe pas.');
     }
@@ -1313,7 +1309,6 @@ getEmploisAllOFDatabase: async (request, response) => {
         }
       ]
     });
-   console.log('ddd',reservations)
     // Réponse en cas de succès
     response.status(200).json(reservations);
   } catch (error) {

@@ -60,7 +60,6 @@ const groupeController = {
 
         const totalPages = Math.ceil(count / limit); // Nombre total de pages
 
-        console.log('rmùlkjhgfhj---------------',rows)
         response.status(200).json({
             totalPages,
             currentPage: page,
@@ -73,9 +72,7 @@ const groupeController = {
 },
   supprimer: async (request, response) => {
     try {
-      console.log(request.params.ids);
       const groupeIds = request.params.ids.split('-');
-      console.log(groupeIds);
       await Groupe.destroy({
         where: {
           id: groupeIds

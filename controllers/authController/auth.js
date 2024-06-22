@@ -111,10 +111,8 @@ const auth = {
                     // il faut toujours specifier le chemi de dossier manuellement ....
                     const chemin = path.join(__dirname, '../../','uploads', oldImage); // Correction : '__dirname' au lieu de juste 'uploads'
                     if (fs.existsSync(chemin)) {
-                         console.log('c',chemin,)
+                        //  console.log('c',chemin,)
                         await fs.promises.unlink(chemin); // Supprimer l'ancienne image
-                    } else {
-                        console.log(`File ${chemin} does not exist.`);
                     }
                 }
             }
@@ -160,7 +158,7 @@ const auth = {
             // Envoyer l'e-mail avec le token de réinitialisation
             try {
                 await transporter.sendMail(option(email,"Réinitialisez votre mot de passe",  typemessage.motdepasseoublier(token)));
-                console.log('Email envoyé avec succès pour la réinitialisation du mot de passe');
+                // console.log('Email envoyé avec succès pour la réinitialisation du mot de passe');
               } catch (error) {
                 console.error('Erreur lors de l\'envoi de l\'email de réinitialisation du mot de passe :', error);
                 throw error; // Propagez l'erreur pour une gestion ultérieure
@@ -304,7 +302,7 @@ resendMemail: async (request, response) => {
         existUser.otpSecret=secret.base32 
         await existUser.save()
         
-        await transporter.sendMail(option(email, typemessage.optMail(otpValue)));
+        await transporter.sendMail(option(email, "Votre nouveau code de connexion sécurisé",typemessage.optMail(otpValue)));
 
         return response.status(200).json({ message: "Le code a été envoyé avec succès" });
 

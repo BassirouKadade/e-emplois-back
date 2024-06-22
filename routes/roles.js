@@ -7,11 +7,8 @@ const seedRoles = async () => {
   if (existingRoles.length === 0) {
     for (const roleName of roles) {
       await Role.create({ name: roleName });
-      console.log(`Role ${roleName} has been created.`);
     }
-  } else {
-    console.log('Roles already exist, seeding not required.');
-  }
+  } 
 };
 
 module.exports = seedRoles;
