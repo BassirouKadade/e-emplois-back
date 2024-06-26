@@ -4,67 +4,47 @@ const { Op } = require('sequelize');
 const emploisController = {
   verificationEmplois: async (request, response) => {
     try {
-      [idEtablissement]=request.user.idEtablissement
-
-      const { day,idGroupe, start, end } = request.body;
-
-      if (start<0 || !day || end<0) {
+      const [idEtablissement] = request.user.idEtablissement;
+      const { day, idGroupe, start, end } = request.body;
+  
+      if (start < 0 || !day || end < 0) {
         return response.status(400).json({ error: 'Start, end dates, and day are required' });
       }
+  
       const reservations = await Reservation.findAll({
         where: {
-          id_etablissement:idEtablissement,
+          id_etablissement: idEtablissement,
           day: { [Op.eq]: day },
           [Op.or]: [
-            {
-              startIndex: { [Op.lte]: start },
-              startEnd: { [Op.gt]: start }
-            },
-            {
-              startIndex: { [Op.lt]: end },
-              startEnd: { [Op.gte]: end }
-            },
-            {
-              startIndex: { [Op.gte]: start },
-              startEnd: { [Op.lte]: end }
-            }
+            { startIndex: { [Op.lte]: start }, startEnd: { [Op.gt]: start } },
+            { startIndex: { [Op.lt]: end }, startEnd: { [Op.gte]: end } },
+            { startIndex: { [Op.gte]: start }, startEnd: { [Op.lte]: end } }
           ]
         }
       });
-
+  
       const groupe = await Groupe.findByPk(idGroupe);
-      const moduleGroupesFInd=await groupe.getModules();
-      const idModuleGroupe=moduleGroupesFInd.map(module=>module.id)
+      const moduleGroupesFInd = await groupe.getModules();
+      const idModuleGroupe = moduleGroupesFInd.map(module => module.id);
       const formateursGroupe = await groupe?.getFormateurs();
-    // formateur de groupe
-      const formateursIds= formateursGroupe?  formateursGroupe.map(formateur => formateur.id):[];
-
-      // recuper les formateur de resrvations
-
+  
+      const formateursIds = formateursGroupe ? formateursGroupe.map(formateur => formateur.id) : [];
       const reservedFormateurMat = reservations 
-      ? reservations.map(reservation => reservation.idFormateur).filter(formateur => formateur !== null)
-      : [];     
-      
+        ? reservations.map(reservation => reservation.idFormateur).filter(formateur => formateur !== null)
+        : [];     
+  
       const modulesId = await GroupeModule.findAll({
         where: {
-          etat_avancement: {
-            [Op.lt]: 100
-          },
-          GroupeId:{
-               [Op.eq]: groupe.id 
-          }
+          etat_avancement: { [Op.lt]: 100 },
+          GroupeId: { [Op.eq]: groupe.id }
         }
       });
       const modulesIdFind = modulesId.map(module => module.ModuleId);
-
-      
-      // console.log(reservedFormateurMat)
+  
       const formateursAvecModules = await Formateur.findAll({
         where: {
           [Op.and]: [
-            {
-              id_etablissement:idEtablissement
-            },
+            { id_etablissement: idEtablissement },
             { id: { [Op.notIn]: reservedFormateurMat.length === 0 ? [] : reservedFormateurMat } },
             { id: { [Op.in]: formateursIds } }
           ]
@@ -77,12 +57,10 @@ const emploisController = {
               { id: { [Op.in]: idModuleGroupe } },
               { id: { [Op.in]: modulesIdFind } }
             ]
-          },
+          }
         }]
       });
-            
-
-    
+  
       const formateurs = await Promise.all(formateursAvecModules.map(async formateur => {
         const formateurAvecModules = {
           id: formateur.id,
@@ -93,47 +71,39 @@ const emploisController = {
               where: {
                 ModuleId: module.id,
                 GroupeId: groupe.id
-
               }
             });
             const dr = groupeModule ? groupeModule.dr : null;
-            // obtenir l'état d'avancement pour ce module et ce formateur
             return {
               id: module.id,
               description: module.description,
-              dureeRest:dr // Ajouter l'état d'avancement au module
+              dureeRest: dr // Ajouter l'état d'avancement au module
             };
           }))
         };
         return formateurAvecModules;
       }));
-      
-      // console.log(formateursAvecModules);
-      
-    // console.log("form",formateurs)
-      // const reservedSalleIds = reservations.map(reservation => reservation.idSalle);
-      
+  
       const reservedSalleIds = reservations 
-      ? reservations.map(reservation => reservation.idSalle).filter(salle => salle !== null)
-      : [];  
+        ? reservations.map(reservation => reservation.idSalle).filter(salle => salle !== null)
+        : [];  
+  
       const salles = await Salle.findAll({
-          where: {
-              [Op.and]: [
-                {
-                  id_etablissement:idEtablissement
-                },
-                  { id: { [Op.notIn]: reservedSalleIds } },
-                  { MREST: { [Op.gt]: 0 } }
-              ]
-          }
+        where: {
+          [Op.and]: [
+            { id_etablissement: idEtablissement },
+            { id: { [Op.notIn]: reservedSalleIds } },
+            { MREST: { [Op.gt]: 0 } }
+          ]
+        }
       });
-      
-      response.status(200).json({salles,formateurs});
+  
+      response.status(200).json({ salles, formateurs });
     } catch (error) {
       console.error('Erreur lors de la vérification des emplois:', error);
       response.status(500).send('Erreur lors de la vérification des emplois');
     }
-  },
+  },  
   creerEmplois: async (request, response) => {
 
     try {
