@@ -2,6 +2,7 @@ const express=require('express')
 const userRoute=express.Router()
 const {ajouter,getInfoUser,liste,supprimer,
     ajouterRoleUser,getInfoUserConnect,
+    allUsersNotEtablissement,
     getRolesUser,getRolesNotAddedUser,deleteRoleUser,deleteEtablissementUser, getEtablissementUser,update,searchNext,allUsers} =require('../controllers/userController/user')
 userRoute.post('/ajouter-user',ajouter)
 userRoute.get('/liste-user',liste)
@@ -16,7 +17,8 @@ userRoute.get('/get-role-user-not-added',getRolesNotAddedUser)
 userRoute.post('/ajouter-role',ajouterRoleUser)
 userRoute.post('/delete-role-role',deleteRoleUser)
 userRoute.delete('/delete-etablissement-user',deleteEtablissementUser)
-userRoute.get('/get-info-user-connect',getInfoUserConnect)
+userRoute.get('/get-info-user-connect',getInfoUserConnect)*
+userRoute.get('/all-usersnot-etablissement',allUsersNotEtablissement)
 
 
 // userRoute.post('/add-groupe-formateur/',addGroupeFormateur)

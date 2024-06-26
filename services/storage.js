@@ -4,7 +4,7 @@ const path = require('path');
 // Configuration de l'espace de stockage pour multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Répertoire où les fichiers seront stockés
+        cb(null, './uploads/'); // Répertoire où les fichiers seront stockés
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

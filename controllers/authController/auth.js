@@ -97,12 +97,16 @@ const auth = {
             }
             
             const saltRounds = 10; // Nombre de rounds de sel pour bcrypt
-        
             // Hasher le mot de passe si fourni
-            let hashedPassword = existUser.motDePasse; // Conserver le hash existant si le mot de passe n'est pas changé
+            var hashedPassword = existUser.password; // Conserver le hash existant si le mot de passe n'est pas changé
+            // console.log('p1',hashedPassword)
+
             if (motDePasse) {
                 hashedPassword = await bcrypt.hash(motDePasse, saltRounds);
             }
+
+            // console.log('p1',hashedPassword)
+
             
             // Supprimer l'ancienne image si une nouvelle image est téléchargée
             if (uploadedFileName) {
@@ -122,7 +126,7 @@ const auth = {
             existUser.nom = nom;
             existUser.prenom = prenom;
             existUser.email = email;
-            existUser.motDePasse = hashedPassword;
+            existUser.password = hashedPassword;
             if (uploadedFileName) {
                 existUser.photo = uploadedFileName; // Ajouter le nom du fichier téléchargé
             }

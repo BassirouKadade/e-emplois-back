@@ -459,7 +459,26 @@ update: async (request, response) => {
       response.status(500).send("Erreur lors de la suppression de l'établissement");
     }
   },
-
+  allUsersNotEtablissement: async (request, response) => {
+    try {
+      const userEtablissements = await Etablissement.findAll();
+      const userEtablissementIds = userEtablissements.map(etablissement => etablissement.id_user);
+  
+      const userList = await User.findAll({
+        where: {
+          id: {
+            [Op.notIn]: userEtablissementIds
+          }
+        }
+      });
+  
+      response.status(200).json(userList);
+    } catch (error) {
+      console.error(error);
+      response.status(500).json({ message: 'Erreur lors de la récupération des utilisateurs' });
+    }
+  },
+  
   }
   
   module.exports = userController;
