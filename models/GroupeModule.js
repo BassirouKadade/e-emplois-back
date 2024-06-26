@@ -5,7 +5,7 @@ function initialModelGroupeModule(sequelize) {
 
     GroupeModule.init({
         etat_avancement: {
-            type: DataTypes.STRING,
+            type: DataTypes.FLOAT,
             allowNull: false
         },
         dr: {
