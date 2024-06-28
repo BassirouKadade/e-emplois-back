@@ -10,7 +10,7 @@ const { initialModelEtablissement } = require('../models/Etablissement'); // Imp
 const { initialModelFormateur } = require('../models/Formateur'); // Importation du modèle Formateur
 const {initialModelGroupeModule}=require('../models/GroupeModule')
 // Création de l'instance Sequelize avec les informations de connexion à la base de données
-const passwordDatabase=";Bacho1234"
+const passwordDatabase="Bacho92910318"
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.USERNAME_APP, passwordDatabase, {
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
